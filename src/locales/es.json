@@ -1,0 +1,58 @@
+{
+  "app": {
+    "title": "EduGraph",
+    "description": "Plataforma Educativa de Grafos",
+    "loading": "Cargando..."
+  },
+  "common": {
+    "welcome": "Bienvenido a EduGraph",
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "logout": "Cerrar Sesión"
+  },
+  "Register": {
+    "title": "Crear una Cuenta",
+    "name":"Nombre",
+    "namePlaceholder": "Nombre Completo",
+    "email":"Correo",
+    "emailPlaceholder": "Correo Institucional",
+    "Strength": "Fortaleza",
+    "password":"Contraseña",
+    "passwordPlaceholder": "Contraseña",
+    "weak": "Débil",
+    "medium": "Medio",
+    "strong": "Fuerte",
+    "submit": "Registrarse",
+    "accept":"Acepto los",
+    "terms":"Terminos y Condiciones"
+  },
+  "Login": {
+    "title": "Iniciar Sesión",
+    "email":"Correo",
+    "emailPlaceholder": "Correo Institucional",
+    "password":"Contraseña",
+    "passwordPlaceholder": "Contraseña",
+    "submit": "Iniciar Sesión",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "remember":"Recordarme"
+  },
+  "Auth": {
+    "regitertitle": "Hola Estudiante",
+    "regiterdescription": "Optimiza tu ruta académica con rutas inteligentes",
+    "regiterbutton": "Registrarse",
+    "loginTitle": "Bienvenido de nuevo",
+    "loginDescription": "Ingresa tus datos académicos para acceder a todas las funcionalidades de la herramienta",
+    "loginButton": "Iniciar Sesión"
+  },
+  "NotFound": {
+    "title": "Página No Encontrada",
+    "description": "La página que estás buscando no existe o ha sido movida.",
+    "backToHome": "Volver al Inicio"
+  },
+  "Loading": {
+    "title": "Preparando todo para ti",
+    "loading": "Cargando...",
+    "redirecting": "Redirigiendo...",
+    "ready":"Listo"
+  }
+}

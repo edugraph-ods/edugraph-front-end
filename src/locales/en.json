@@ -1,0 +1,52 @@
+{
+  "app": {
+    "title": "EduGraph",
+    "description": "Educational Graph Platform",
+    "loading": "Loading..."
+  },
+  "Register": {
+    "title": "Create an Account",
+    "name":"Name",
+    "namePlaceholder": "Full Name",
+    "email":"Email",
+    "emailPlaceholder": "Institutional Email",
+    "Strength": "Strength",
+    "password":"Password",
+    "passwordPlaceholder": "Password",
+    "weak": "Weak",
+    "medium": "Medium",
+    "strong": "Strong",
+    "submit": "Sign Up",
+    "accept": "I accept the",
+    "terms": "Terms and Conditions"
+  },
+"Login": {
+    "title": "Sign In",
+    "email":"Email",
+    "emailPlaceholder": "Institutional Email",
+    "password":"Password",
+    "passwordPlaceholder": "Password",
+    "submit": "Sign In",
+    "forgotPassword": "Forgot your password?",
+    "remember": "Remember me"
+  },
+  "Auth": {
+    "regitertitle": "Hello Student",
+    "regiterdescription": "Optimize your academic path with smart routes",
+    "regiterbutton": "Sign Up",
+    "loginTitle":"Welcome back", 
+    "loginDescription":"Enter your academic information to use all the features of the tool", 
+    "loginButton":"Sign In"
+  },
+  "NotFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "backToHome": "Back to Home"
+  },
+  "Loading":{
+    "title": "Getting everything ready for you",
+    "loading": "Loading...",
+    "redirecting": "Redirecting...",
+    "ready": "Ready"
+  }
+}
