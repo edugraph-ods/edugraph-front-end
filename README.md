@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EduGraph — Frontend (Next.js + TypeScript)
 
-## Getting Started
+This repository implements the frontend using **Next.js** and **TypeScript**, following the principles of **Clean Architecture**, with a defined layered organization that includes presentation/components, contexts, hooks, lib, styles and utils.
 
-First, run the development server:
+
+# What is this project
+
+The EduGraph frontend is an application developed with Next.js and TypeScript that provides the presentation layer for university learning path planning. It is structured following principles inspired by Clean Architecture, so that the presentation logic (pages and components) is separated from the application logic (hooks and contexts) and domain utilities (lib/utils). The API (backend) operates as an independent service and is consumed by the frontend via HTTP calls.
+
+---
+
+# Prerequisites
+
+* Node.js (LTS recommended, e.g. **>= 18**)
+* npm (v9+) — or your preferred package manager (yarn/pnpm)
+* Git (optional)
+
+---
+
+# Quick start (create project)
+
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/edugraph-ods/edugraph-front-end.git
+cd edugraph-front-end
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Install required dependencies
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Run these commands in the frontend project root.
 
-## Learn More
+```bash
+# 1) shadcn UI 
+npx shadcn@latest add button
 
-To learn more about Next.js, take a look at the following resources:
+# 2) react-icons
+npm install react-icons --save
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 3) next-intl (i18n)
+npm install next-intl
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# 4) motion 
+npm install motion
 
-## Deploy on Vercel
+# 5) Framer Motion
+npm install framer-motion
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Run the app
+
+```bash
+
+npm/yarn/pnpm install
+
+npm/yarn/pnpm run dev
+
+```
+
+Production build:
+
+```bash
+npm/yarn/pnpm run build
+npm/yarn/pnpm start
+```
+
+---
+
+## License
+
+This project is licensed under the MIT License see the [LICENSE](./LICENSE) file for details.
+
