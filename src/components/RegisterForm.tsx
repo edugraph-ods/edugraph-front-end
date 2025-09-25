@@ -121,7 +121,7 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-500">
-                {t('passwordStrength')}:
+                {t('Strength')}:
               </span>
               <span className={`text-sm font-medium ${getStrengthColor()}`}>
                 {getStrengthLabel()}
