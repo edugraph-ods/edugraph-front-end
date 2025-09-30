@@ -24,7 +24,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <title>EduGraph</title>
         <meta name="description" content="Educational platform" />

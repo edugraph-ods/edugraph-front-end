@@ -1,9 +1,14 @@
-import { AuthLayout } from "@/app/pages/form/layout";
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  return (
-    <div>
-      <AuthLayout />
-    </div>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.push('/auth/sign-in');
+  }, [router]);
+
+  return null;
 }
