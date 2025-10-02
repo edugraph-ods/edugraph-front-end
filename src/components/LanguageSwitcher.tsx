@@ -1,38 +1,26 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 
 const SUPPORTED_LOCALES = [
   { code: 'en', name: 'English' },
   { code: 'es', name: 'Español' },
 ];
 
-function getCurrentLocale(pathname: string) {
-  const segments = pathname.split('/');
-  const locale = segments[1] || 'en';
-  return SUPPORTED_LOCALES.some(l => l.code === locale) ? locale : 'en';
-}
-
-function getPathWithLocale(pathname: string, newLocale: string) {
-  const segments = pathname.split('/');
-  if (SUPPORTED_LOCALES.some(locale => locale.code === segments[1])) {
-    segments[1] = newLocale;
-  } else {
-    segments.splice(1, 0, newLocale);
-  }
-  
-  return segments.join('/') || '/';
-}
-
 export default function LanguageSwitcher() {
-  const router = useRouter();
-  const pathname = usePathname() || '/';
-  const currentLocale = getCurrentLocale(pathname);
+  const { i18n } = useTranslation();
+  const currentLocale = i18n.language || 'en';
 
-  const handleLocaleChange = (newLocale: string) => {
+  const handleLocaleChange = async (newLocale: string) => {
     if (newLocale === currentLocale) return;
-    const newPath = getPathWithLocale(pathname, newLocale);
-    router.push(newPath);
+    try {
+      await i18n.changeLanguage(newLocale);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('i18nextLng', newLocale);
+      }
+    } catch (error) {
+      console.error('Error changing language:', error);
+    }
   };
 
   return (
@@ -41,10 +29,10 @@ export default function LanguageSwitcher() {
         <button
           key={code}
           onClick={() => handleLocaleChange(code)}
-          className={`px-3 py-1 rounded ${
+          className={`px-3 py-1 rounded cursor-pointer ${
             currentLocale === code
               ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 hover:bg-gray-300'
+              : 'bg-gray-200 hover:bg-gray-300 text-black'
           }`}
           aria-current={currentLocale === code ? 'true' : undefined}
         >

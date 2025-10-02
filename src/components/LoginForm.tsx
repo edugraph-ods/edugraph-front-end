@@ -15,7 +15,7 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
   return (
     <div className="w-full">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">
-        {t("title")}
+        {t('title')}
       </h1>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
