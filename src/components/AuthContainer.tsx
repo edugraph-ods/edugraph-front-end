@@ -1,14 +1,27 @@
 "use client";
 
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RegisterForm } from "./RegisterForm";
 import { LoginForm } from "./LoginForm";
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export const AuthContainer = () => {
-  const [showRegister, setShowRegister] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const [showRegister, setShowRegister] = useState(pathname === '/auth/sign-up');
   const { t } = useTranslation('Auth');
+
+  useEffect(() => {
+    setShowRegister(pathname === '/auth/sign-up');
+  }, [pathname]);
+
+  const toggleAuthMode = (showRegister: boolean) => {
+    setShowRegister(showRegister);
+    router.push(showRegister ? '/auth/sign-up' : '/auth/sign-in');
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -95,6 +108,9 @@ export const AuthContainer = () => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-50 p-4">
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-7xl bg-white rounded-2xl shadow-2xl h-auto max-h-[90vh] aspect-[16/10] overflow-hidden flex">
         <AnimatePresence mode="wait">
           <motion.div
@@ -130,15 +146,13 @@ export const AuthContainer = () => {
                   : t("regiterdescription")}
               </motion.p>
               <motion.button
-                onClick={() => setShowRegister(!showRegister)}
+                onClick={() => toggleAuthMode(!showRegister)}
                 className="border-2 border-white text-white px-8 py-2 rounded-md hover:bg-white hover:text-blue-600 transition-colors duration-200 cursor-pointer"
                 variants={itemVariants}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {showRegister
-                  ? t("loginButton")
-                  : t("regiterbutton")}
+                {showRegister ? t('loginButton') : t('regiterbutton')}
               </motion.button>
             </motion.div>
           </motion.div>
