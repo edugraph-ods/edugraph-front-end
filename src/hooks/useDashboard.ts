@@ -34,7 +34,7 @@ export const useDashboard = (): UseDashboardReturn => {
   const [selectedCycle, setSelectedCycle] = useState<number | null>(null);
   const [courses, setCourses] = useState<Course[]>(COURSES);
   const [selectedCareer, setSelectedCareer] = useState<string>('');
-  const [filteredCourses, setFilteredCourses] = useState<Course[]>(COURSES);
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [expandedCycles, setExpandedCycles] = useState<number[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const router = useRouter();
@@ -49,7 +49,7 @@ export const useDashboard = (): UseDashboardReturn => {
 
   const updateFilteredCourses = useCallback((cycle: number | null) => {
     if (!cycle) {
-      setFilteredCourses(COURSES);
+      setFilteredCourses([]);
       return;
     }
     setFilteredCourses(COURSES.filter(course => course.cycle === cycle));
@@ -78,8 +78,28 @@ export const useDashboard = (): UseDashboardReturn => {
 
 
   const handleCourseSelect = useCallback((courseId: string) => {
-    setSelectedCourseId(prev => prev === courseId ? null : courseId);
-  }, []);
+    // Toggle selection
+    const newSelectedId = selectedCourseId === courseId ? null : courseId;
+    setSelectedCourseId(newSelectedId);
+    
+    // Find the selected course
+    const course = COURSES.find(c => c.id === courseId);
+    if (course) {
+      // Update the selected cycle to the course's cycle
+      setSelectedCycle(course.cycle);
+      // Ensure the cycle is expanded
+      setExpandedCycles(prev => 
+        prev.includes(course.cycle) ? prev : [...prev, course.cycle]
+      );
+    }
+    
+    // Update filtered courses based on the selection
+    if (newSelectedId) {
+      updateFilteredCourses(course?.cycle || null);
+    } else {
+      updateFilteredCourses(null);
+    }
+  }, [selectedCourseId, updateFilteredCourses]);
 
 
   const handleLogout = useCallback(() => {
@@ -91,7 +111,8 @@ export const useDashboard = (): UseDashboardReturn => {
     setSelectedCycle(null);
     setSelectedCareer('');
     setExpandedCycles([]);
-    setFilteredCourses(COURSES);
+    setFilteredCourses([]);
+    setSelectedCourseId(null);
   }, []);
 
 
@@ -103,12 +124,10 @@ export const useDashboard = (): UseDashboardReturn => {
     );
   }, []);
 
-
   const toggleCourseStatus = useCallback((courseId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const course = courses.find(c => c.id === courseId);
     if (!course) return;
-    
 
     const statusMap: Record<CourseStatus, CourseStatus> = {
       'not_taken': 'approved',
@@ -121,7 +140,6 @@ export const useDashboard = (): UseDashboardReturn => {
 
   return {
     selectedCycle,
-    selectedCareer,
     selectedCourseId,
     expandedCycles,
     filteredCourses,
