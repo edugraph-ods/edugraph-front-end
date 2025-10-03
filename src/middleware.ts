@@ -3,21 +3,36 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
-  }
 
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/') ||
-    pathname.startsWith('/static/') ||
-    pathname.startsWith('/auth/') ||
-    pathname.includes('.')
-  ) {
+  const publicRoutes = [
+    '/auth/sign-in', 
+    '/auth/sign-up', 
+    '/_next', 
+    '/api',
+    '/_error',
+    '/404',
+    '/500',
+    '/favicon.ico'
+  ];
+
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+  const token = request.cookies.get('auth-token');
+  const isAuthenticated = !!token?.value;
+
+  if (!isAuthenticated) {
+    const loginUrl = new URL('/auth/sign-in', request.url);
+    loginUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthenticated && (pathname.startsWith('/auth/sign-in') || pathname.startsWith('/auth/sign-up'))) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

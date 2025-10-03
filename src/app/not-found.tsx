@@ -16,7 +16,7 @@ export default function NotFound() {
           {t('description')}
         </p>
         <Link 
-          href="/sign-in" 
+          href="/auth/sign-in" 
           className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           {t('backToHome')}
