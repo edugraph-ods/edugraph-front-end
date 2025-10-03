@@ -27,45 +27,53 @@ interface CourseGraphProps {
   onCourseSelect?: (courseId: string) => void;
 }
 const CourseGraph: React.FC<CourseGraphProps> = ({ 
+  courses: allCourses,
   selectedCycle, 
   selectedCourseId,
   onCourseSelect,
   onStatusChange 
 }) => {
+
   const {
     nodes,
     edges,
-    isLoading,
     onNodesChange,
     onEdgesChange,
     updateCourseStatus,
     criticalPath,
-    setEdges
-  } = useCourseGraph();
+    setEdges,
+    isLoading
+  } = useCourseGraph(allCourses);
 
   const getCurrentStatus = useCallback((courseId: string): CourseStatus => {
     const node = nodes.find(n => n.id === courseId);
     return node?.data.status || 'not_taken';
   }, [nodes]);
   const handleStatusChange = useCallback((courseId: string, newStatus: CourseStatus) => {
-    updateCourseStatus(courseId, newStatus);
-  }, [updateCourseStatus]);
+    onStatusChange(courseId, newStatus);
+  }, [onStatusChange]);
   const getStatusColor = useCallback((status: CourseStatus) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-green-100 text-green-800 border border-green-300';
+      case 'failed': return 'bg-red-100 text-red-800 border border-red-300';
+      default: return 'bg-gray-100 text-gray-800 border border-gray-300';
     }
   }, []);
 
   const nodeTypes = useMemo(() => ({
-    courseNode: (nodeProps: NodeProps<CourseNodeData>) => (
-      <CourseNode 
-        {...nodeProps} 
-        onStatusChange={handleStatusChange}
-      />
-    )
-  }), [handleStatusChange]);
+    courseNode: (nodeProps: NodeProps<CourseNodeData>) => {
+      const handleNodeStatusChange = (courseId: string, status: CourseStatus) => {
+        onStatusChange(courseId, status);
+      };
+      
+      return (
+        <CourseNode 
+          {...nodeProps} 
+          onStatusChange={handleNodeStatusChange}
+        />
+      );
+    }
+  }), [onStatusChange]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
@@ -109,15 +117,23 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
                         <select
                           value={getCurrentStatus(node.id)}
                           onChange={(e) => handleStatusChange(node.id, e.target.value as CourseStatus)}
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            getStatusColor(getCurrentStatus(node.id))
-                          } border-0 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                           onClick={(e) => e.stopPropagation()}
+                          className={`px-3 py-1 rounded-full text-xs font-medium text-center min-w-[110px] cursor-pointer appearance-none ${
+                            getStatusColor(getCurrentStatus(node.id))
+                          } hover:opacity-90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                         >
-                          <option value="not_taken">No rendido</option>
+                          <option value="not_taken">No rindió</option>
                           <option value="approved">Aprobado</option>
                           <option value="failed">Desaprobado</option>
                         </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                          </svg>
+                        </div>
+                        {selectedCourseId === node.id && (
+                          <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
+                        )}
                       </div>
                     </div>
 
@@ -160,52 +176,58 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
   return (
     <div className="h-full w-full flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
       <div className="flex-1 relative" style={{ minHeight: 0 }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          nodesDraggable={true}
-          nodesConnectable={false}
-          elementsSelectable={true}
-          onNodeClick={(event, node) => onCourseSelect?.(node.id)}
-          connectionLineType={ConnectionLineType.SmoothStep}
-          defaultEdgeOptions={{ 
-            animated: false, 
-            style: { 
-              stroke: '#3b82f6', 
-              strokeWidth: 2 
-            } 
-          }}
-        >
-          <Background gap={12} />
-          <Controls />
-          <MiniMap />
-          <Panel position="top-right" className="bg-white p-4 rounded shadow">
-            <div className="space-y-2">
-              <h3 className="font-semibold">Leyenda</h3>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-green-100 border border-green-300 rounded-full mr-2"></div>
-                <span className="text-sm">Aprobado</span>
+        {selectedCourseId ? (
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+            nodesDraggable={true}
+            nodesConnectable={false}
+            elementsSelectable={true}
+            onNodeClick={(event, node) => onCourseSelect?.(node.id)}
+            connectionLineType={ConnectionLineType.SmoothStep}
+            defaultEdgeOptions={{ 
+              animated: false, 
+              style: { 
+                stroke: '#3b82f6', 
+                strokeWidth: 2 
+              } 
+            }}
+          >
+            <Background gap={12} />
+            <Controls />
+            <MiniMap />
+            <Panel position="top-right" className="bg-white p-4 rounded shadow">
+              <div className="space-y-2">
+                <h3 className="font-semibold">Leyenda</h3>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-100 border border-green-300 rounded-full mr-2"></div>
+                  <span className="text-sm">Aprobado</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-red-100 border border-red-300 rounded-full mr-2"></div>
+                  <span className="text-sm">Desaprobado</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded-full mr-2"></div>
+                  <span className="text-sm">No rendido</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-blue-100 border-blue-500 border-2 rounded-full mr-2"></div>
+                  <span className="text-sm">Curso Crítico</span>
+                </div>
               </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-red-100 border border-red-300 rounded-full mr-2"></div>
-                <span className="text-sm">Desaprobado</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded-full mr-2"></div>
-                <span className="text-sm">No rendido</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-blue-100 border-blue-500 border-2 rounded-full mr-2"></div>
-                <span className="text-sm">Curso Crítico</span>
-              </div>
-            </div>
-          </Panel>
-        </ReactFlow>
+            </Panel>
+          </ReactFlow>
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-gray-500">
+            Selecciona un curso para visualizar el grafo
+          </div>
+        )}
       </div>
       
       {/* Course Flow Detail Section */}

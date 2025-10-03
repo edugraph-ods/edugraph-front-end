@@ -46,6 +46,15 @@ npm install motion
 
 # 5) Framer Motion
 npm install framer-motion
+
+# 6) React Flow
+npm install reactflow
+
+# 7) React Toastify
+npm install react-toastify @types/react-toastify
+
+# 8) Dagre
+npm install dagre @types/dagre
 ```
 
 ---
@@ -72,8 +81,3 @@ npm/yarn/pnpm start
 ## License
 
 This project is licensed under the MIT License see the [LICENSE](./LICENSE) file for details.
-
-npm install reactflow
-
-npm install react-toastify @types/react-toastify
-npm install dagre @types/dagre

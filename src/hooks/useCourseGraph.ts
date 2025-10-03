@@ -1,6 +1,6 @@
 // src/hooks/useCourseGraph.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Node, Edge, useNodesState, useEdgesState } from 'reactflow';
+import { Node, Edge, useNodesState, useEdgesState, MarkerType } from 'reactflow';
 import { COURSES, Course, CourseStatus } from './use-course';
 import { OptimizedCourseScheduler } from '../utils/courseScheduler';
 
@@ -22,13 +22,13 @@ export type CourseNode = Node<CourseNodeData> & {
   status?: CourseStatus;
 };
 
-export const useCourseGraph = () => {
+export const useCourseGraph = (courses: Course[] = []) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<CourseNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [criticalPath, setCriticalPath] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const scheduler = useMemo(() => new OptimizedCourseScheduler(COURSES, 7), []);
+  const scheduler = useMemo(() => new OptimizedCourseScheduler(courses, 7), [courses]);
 
   const generateNodePositions = useCallback((courses: Course[]): { [key: string]: { x: number; y: number } } => {
     const positions: { [key: string]: { x: number; y: number } } = {};
@@ -123,7 +123,7 @@ export const useCourseGraph = () => {
             opacity: 1
           },
           markerEnd: {
-            type: 'arrowclosed',
+            type: MarkerType.ArrowClosed,
             color: isCriticalEdge ? '#f59e0b' : '#3b82f6',
             width: 16,
             height: 16,
@@ -174,8 +174,9 @@ export const useCourseGraph = () => {
   }, [scheduler]);
 
   const courseNodes = useMemo(() => {
-    const positions = generateNodePositions(COURSES);
-    return COURSES.map(course => ({
+    if (!courses.length) return [];
+    const positions = generateNodePositions(courses);
+    return courses.map(course => ({
       id: course.id,
       type: 'courseNode',
       data: {
@@ -191,7 +192,7 @@ export const useCourseGraph = () => {
       x: positions[course.id]?.x || 0,
       y: positions[course.id]?.y || 0
     }));
-  }, [generateNodePositions]);
+  }, [generateNodePositions, courses]);
 
   useEffect(() => {
     if (!courseNodes.length) return;

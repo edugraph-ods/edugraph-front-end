@@ -146,22 +146,19 @@ export class OptimizedCourseScheduler {
 
     this.courseIds.forEach(id => {
       const course = this.courses.get(id)!;
-      if (course.status !== 'failed') {
-        inDegree.set(id, 0);
-        graph.set(id, []);
-        distances.set(id, 0);
-        previous.set(id, '');
-        credits.set(id, course.credits);
-      }
+      // Incluir todos los cursos en el cálculo del camino crítico.
+      inDegree.set(id, 0);
+      graph.set(id, []);
+      distances.set(id, 0);
+      previous.set(id, '');
+      credits.set(id, course.credits);
     });
 
     this.courseIds.forEach(id => {
       const course = this.courses.get(id)!;
-      if (course.status === 'failed') return;
-      
       course.prerequisites.forEach(prereqId => {
         const prereq = this.courses.get(prereqId);
-        if (prereq && prereq.status !== 'failed') {
+        if (prereq) {
           graph.get(prereqId)?.push(id);
           inDegree.set(id, (inDegree.get(id) || 0) + 1);
         }
