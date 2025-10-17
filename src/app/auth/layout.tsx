@@ -1,6 +1,6 @@
 import React from "react";
 import { AuthContainer } from "@/components/AuthContainer";
 
-export const AuthLayout = () => {
+export default function AuthLayout() {
   return <AuthContainer />;
-};
+}

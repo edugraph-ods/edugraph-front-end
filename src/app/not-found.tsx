@@ -1,9 +1,10 @@
+'use client';
+
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useTranslation } from 'react-i18next';
 
 export default function NotFound() {
-  const t = useTranslations('NotFound');
-
+  const { t } = useTranslation('NotFound');
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
@@ -15,7 +16,7 @@ export default function NotFound() {
           {t('description')}
         </p>
         <Link 
-          href="/" 
+          href="/auth/sign-in" 
           className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           {t('backToHome')}

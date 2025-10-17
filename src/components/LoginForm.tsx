@@ -1,47 +1,80 @@
 "use client";
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface LoginFormProps {
   onSwitchToRegister?: () => void;
 }
 
 export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
+  
+  const dashboardPath = '/dashboard';
   const { t } = useTranslation('Login');
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    document.cookie = 'auth-token=demo-token; path=/; max-age=86400'; 
+    
+    window.location.href = '/dashboard';
   };
 
   return (
     <div className="w-full">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">
-        {t("title")}
+        {t('title')}
       </h1>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         {/* Email Input */}
         <div className="space-y-1">
           <label htmlFor="email" className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
-            {t("email")}
+            {t('email')}
           </label>
           <input
             id="email"
-            type="Email"
+            name="email"
+            type="email"
             required
-            placeholder={t("emailPlaceholder")}
-            className="w-full px-4 py-3 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder-gray-400 text-gray-900"
+            value={formData.email}
+            onChange={handleChange}
+            disabled={isLoading}
+            placeholder={t('emailPlaceholder')}
+            className="w-full px-4 py-3 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder-gray-400 text-gray-900 disabled:opacity-70"
           />
         </div>
 
         {/* Password Input */}
         <div className="space-y-1">
           <label htmlFor="password" className="block text-sm sm:text-base font-medium text-gray-700">
-            {t("password")}
+            {t('password')}
           </label>
           <input
+            id="password"
+            name="password"
             type="password"
-            placeholder={t("passwordPlaceholder")}
-            className="w-full px-4 py-3 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder-gray-400 text-gray-900"
+            required
+            value={formData.password}
+            onChange={handleChange}
+            disabled={isLoading}
+            placeholder={t('passwordPlaceholder')}
+            className="w-full px-4 py-3 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder-gray-400 text-gray-900 disabled:opacity-70"
           />
         </div>
 
@@ -69,7 +102,7 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
                 </div>
               </div>
               <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
-                {t("remember")}
+                {t('remember')}
               </span>
             </label>
           </div>
@@ -79,7 +112,7 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
               type="button"
               className="text-sm sm:text-base font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 cursor-pointer"
             >
-              {t("forgotPassword")}
+              {t('forgotPassword')}
             </button>
           </div>
         </div>
@@ -88,11 +121,17 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
           <button
             type="submit"
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer"
-          >
-            {t("submit")}
+            >
+            {t('submit')}
           </button>
+          {error && (
+            <div className="text-red-500 text-sm mt-2 text-center">
+              {error}
+            </div>
+          )}
         </div>
       </form>
     </div>
   );
 };
+
