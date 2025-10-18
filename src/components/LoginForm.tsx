@@ -2,16 +2,14 @@
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
-interface LoginFormProps {
-  onSwitchToRegister?: () => void;
-}
-
-export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
+export const LoginForm = () => {
   
   const dashboardPath = '/dashboard';
   const { t } = useTranslation('Login');
   const router = useRouter();
+  const { signIn } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -27,12 +25,32 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    document.cookie = 'auth-token=demo-token; path=/; max-age=86400'; 
-    
-    window.location.href = '/dashboard';
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await signIn(formData);
+      const token = typeof response === 'object' && response !== null
+        ? 'token' in response && typeof response.token === 'string'
+          ? response.token
+          : 'accessToken' in response && typeof response.accessToken === 'string'
+            ? response.accessToken
+            : null
+        : null;
+
+      if (token) {
+        document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+      }
+
+      router.push(dashboardPath);
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : 'Unexpected error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -120,7 +138,8 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
         <div className="pt-4">
           <button
             type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer"
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer disabled:opacity-70"
+            disabled={isLoading}
             >
             {t('submit')}
           </button>
