@@ -23,8 +23,14 @@ export default function RootLayout({
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <title>EduGraph</title>
         <meta name="description" content="Educational platform" />
@@ -32,15 +38,14 @@ export default function RootLayout({
         <link rel="icon" href="/logo.jpg" type="image/x-icon" />
       </head>
       <body className={`${inter.className} min-h-screen bg-background`}>
-        {isLoading ? (
-          <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
-            <Loading />
-          </div>
-        ) : (
-          <Providers>
-            {children}
-          </Providers>
-        )}
+        <Providers>
+          {isLoading ? (
+            <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
+              <Loading />
+            </div>
+          ) : null}
+          {children}
+        </Providers>
       </body>
     </html>
   );
