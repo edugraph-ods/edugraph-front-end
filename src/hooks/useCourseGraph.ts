@@ -1,4 +1,3 @@
-// src/hooks/useCourseGraph.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Node, Edge, useNodesState, useEdgesState, MarkerType } from 'reactflow';
 import { COURSES, Course, CourseStatus } from './use-course';
@@ -28,66 +27,54 @@ export const useCourseGraph = (courses: Course[] = []) => {
   const [criticalPath, setCriticalPath] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const scheduler = useMemo(() => new OptimizedCourseScheduler(courses, 7), [courses]);
+  const coursesKey = useMemo(() => {
+    return courses
+      .map((course) => {
+        const prereqs = (course.prerequisites || []).join(',');
+        return `${course.id}|${course.status}|${course.credits}|${course.cycle}|${prereqs}`;
+      })
+      .join(';');
+  }, [courses]);
+
+  const scheduler = useMemo(() => new OptimizedCourseScheduler(courses, 7), [coursesKey]);
 
   const generateNodePositions = useCallback((courses: Course[]): { [key: string]: { x: number; y: number } } => {
     const positions: { [key: string]: { x: number; y: number } } = {};
-    const levelMap = new Map<string, number>();
-    const processed = new Set<string>();
 
-    const calculateLevel = (courseId: string): number => {
-      if (levelMap.has(courseId)) return levelMap.get(courseId)!;
-      if (processed.has(courseId)) return 0;
-
-      processed.add(courseId);
-      const course = courses.find(c => c.id === courseId);
-      if (!course) return 0;
-
-      if (!course.prerequisites || course.prerequisites.length === 0) {
-        levelMap.set(courseId, 0);
-        return 0;
-      }
-
-      const prereqLevels = course.prerequisites.map(prereqId => calculateLevel(prereqId) + 1);
-      const level = Math.max(...prereqLevels);
-      levelMap.set(courseId, level);
-      return level;
-    };
-
-    courses.forEach(course => calculateLevel(course.id));
-
-    const levels = new Map<number, string[]>();
-    courses.forEach(course => {
-      const level = levelMap.get(course.id) || 0;
-      if (!levels.has(level)) levels.set(level, []);
-      levels.get(level)!.push(course.id);
+    const cycles = Array.from(new Set(courses.map(c => c.cycle))).sort((a, b) => a - b);
+    const byCycle = new Map<number, string[]>();
+    courses.forEach(c => {
+      const arr = byCycle.get(c.cycle) ?? [];
+      arr.push(c.id);
+      byCycle.set(c.cycle, arr);
     });
 
-    const xGap = 250;
-    const yGap = 120;
-    const padding = 100;
-    const maxNodesInLevel = Math.max(...Array.from(levels.values()).map(level => level.length));
+    const xGap = 320;
+    const yGap = 110;
+    const paddingX = 80;
+    const paddingY = 60;
 
-    levels.forEach((courseIds, level) => {
-      const levelWidth = (maxNodesInLevel - 1) * xGap + 2 * padding;
-      const startX = (typeof window !== 'undefined' ? window.innerWidth : 1200) - levelWidth > 0
-        ? (window.innerWidth - levelWidth) / 2
-        : padding;
-      const x = startX + level * xGap;
+    const maxPerCycle = Math.max(...cycles.map(cyc => (byCycle.get(cyc)?.length ?? 0)));    
+    const columnHeight = (maxPerCycle - 1) * yGap + 2 * paddingY;
 
-      const levelHeight = (courseIds.length - 1) * yGap + 2 * padding;
-      const startY = (typeof window !== 'undefined' ? window.innerHeight : 800) - levelHeight > 0
-        ? (window.innerHeight - levelHeight) / 2
-        : padding / 2;
+    const viewW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const viewH = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const startYBase = viewH - columnHeight > 0 ? (viewH - columnHeight) / 2 : paddingY;
 
-      courseIds.sort((a, b) => {
-        const aOutgoing = courses.filter(c => c.prerequisites.includes(a)).length;
-        const bOutgoing = courses.filter(c => c.prerequisites.includes(b)).length;
-        return bOutgoing - aOutgoing;
+    cycles.forEach((cycle, colIndex) => {
+      const ids = (byCycle.get(cycle) ?? []).slice();
+      ids.sort((a, b) => {
+        const aOut = courses.filter(c => c.prerequisites.includes(a)).length;
+        const bOut = courses.filter(c => c.prerequisites.includes(b)).length;
+        return bOut - aOut;
       });
 
-      courseIds.forEach((courseId, index) => {
-        const y = startY + index * yGap;
+      const x = paddingX + colIndex * xGap;
+      const levelHeight = (ids.length - 1) * yGap + 2 * paddingY;
+      const startY = viewH - levelHeight > 0 ? (viewH - levelHeight) / 2 : startYBase;
+
+      ids.forEach((courseId, rowIndex) => {
+        const y = startY + rowIndex * yGap;
         positions[courseId] = { x, y };
       });
     });
@@ -165,7 +152,12 @@ export const useCourseGraph = (courses: Course[] = []) => {
   useEffect(() => {
     try {
       const cp = scheduler.getCriticalPath();
-      setCriticalPath(cp);
+      setCriticalPath((prev) => {
+        if (prev.length === cp.length && prev.every((value, index) => value === cp[index])) {
+          return prev;
+        }
+        return cp;
+      });
       setIsLoading(false);
     } catch (error) {
       console.error('Error calculating critical path:', error);

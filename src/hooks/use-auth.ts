@@ -11,12 +11,14 @@ type SignUpPayload = {
   password: string;
 };
 
+const DEFAULT_API_BASE_URL = "";
+
 const resolveApiBase = () => {
-  const envBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+  const envBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? DEFAULT_API_BASE_URL;
   const trimmedBase = envBase.trim();
 
   if (trimmedBase.length === 0) {
-    return "";
+    return DEFAULT_API_BASE_URL;
   }
 
   return trimmedBase.endsWith("/") ? trimmedBase.slice(0, -1) : trimmedBase;

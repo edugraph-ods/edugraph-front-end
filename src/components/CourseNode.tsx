@@ -16,16 +16,17 @@ export interface CourseNodeData {
 }
 
 interface CourseNodeProps {
+  id: string;
   data: CourseNodeData;
   onStatusChange?: (courseId: string, newStatus: CourseStatus) => void;
 }
 
-export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange }) => {
+export const CourseNode = React.memo<CourseNodeProps>(({ id, data, onStatusChange }) => {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
 
   const handleStatusChange = (newStatus: CourseStatus) => {
     if (onStatusChange) {
-      onStatusChange(data.label, newStatus);
+      onStatusChange(id, newStatus);
     }
     setShowStatusMenu(false);
   };
@@ -64,15 +65,17 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
     }
   })();
 
-  const borderStyle = data.isInCriticalPath 
-    ? 'border-2 border-yellow-500 shadow-md' 
+  const creditsLabel = data.credits === 1 ? 'crédito' : 'créditos';
+
+  const criticalClasses = data.isInCriticalPath
+    ? 'border-2 border-yellow-500 shadow-lg ring-2 ring-yellow-300/60 animate-pulse'
     : 'border';
 
   return (
     <div
-      className={`p-3 rounded-lg ${borderStyle} ${statusColor} shadow-sm hover:shadow-md transition-all duration-200 relative`}
-      style={{ borderLeftWidth: '4px', borderLeftColor: data.isInCriticalPath ? '#f59e0b' : 'transparent' }}
-      data-id={data.label}
+      className={`p-3 rounded-lg ${criticalClasses} ${statusColor} shadow-sm hover:shadow-md transition-all duration-200 relative`}
+      style={{ borderLeftWidth: '5px', borderLeftColor: data.isInCriticalPath ? '#f59e0b' : 'transparent' }}
+      data-id={id}
       onMouseEnter={() => setShowStatusMenu(true)}
       onMouseLeave={() => setShowStatusMenu(false)}
     >
@@ -128,7 +131,7 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
             )}
           </div>
           <div className="text-sm mt-1">
-            <span className="font-medium">{data.credits}</span> créditos
+            <span className="font-medium">{data.credits}</span> {data.credits === 1 ? 'crédito' : 'créditos'}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">

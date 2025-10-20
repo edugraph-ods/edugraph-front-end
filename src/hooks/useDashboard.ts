@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { COURSES, Course, CourseStatus } from './use-course';
+import { useGraphApi } from '@/hooks/use-graph';
 
 export const CAREERS = [
   { id: 'cs', name: 'Ciencias de la Computación' },
@@ -16,6 +17,7 @@ interface UseDashboardReturn {
   expandedCycles: number[];
   filteredCourses: Course[];
   courses: Course[];
+  visibleCourses: Course[];
 
   handleCareerChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleClearFilters: () => void;
@@ -28,6 +30,7 @@ interface UseDashboardReturn {
 
   CAREERS: typeof CAREERS;
   cycles: number[];
+  careers: Array<{ id: string; name: string }>;
 }
 
 export const useDashboard = (): UseDashboardReturn => {
@@ -38,13 +41,90 @@ export const useDashboard = (): UseDashboardReturn => {
   const [expandedCycles, setExpandedCycles] = useState<number[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const router = useRouter();
+  const { getCourses, ingest } = useGraphApi();
 
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        let backendCourses = await getCourses();
+        if (!backendCourses || backendCourses.length === 0) {
+          backendCourses = await ingest({});
+        }
+        if (cancelled) return;
+        const extractCodes = (value: unknown): string[] => {
+          const out = new Set<string>();
+          if (typeof value === 'string') {
+            const matches = value.match(/[A-Za-z]{2,}\d{1,}/g) || [];
+            matches.forEach((m) => out.add(m.trim()));
+          } else if (value && typeof value === 'object') {
+            const v = value as { code?: unknown; id?: unknown; name?: unknown };
+            const raw =
+              (typeof v.code === 'string' ? v.code :
+               typeof v.id === 'string' ? v.id :
+               typeof v.name === 'string' ? v.name :
+               '')
+              .trim();
+            if (raw) {
+              const matches = raw.match(/[A-Za-z]{2,}\d{1,}/g) || [raw];
+              matches.forEach((m) => out.add(m.trim()));
+            }
+          }
+          return Array.from(out);
+        };
+
+        const mapped: Course[] = (backendCourses || []).map((c) => {
+          const code = (c.code || '').trim();
+          const local = COURSES.find(cc => cc.id.toLowerCase() === code.toLowerCase());
+          const normalizedPrereqs = Array.isArray(c.prerequisites)
+            ? c.prerequisites.flatMap((p: unknown) => extractCodes(p))
+            : (local?.prerequisites || []);
+
+          const backendCredits = (typeof c.credits === 'number')
+            ? c.credits
+            : Number((c as unknown as { credits?: unknown }).credits) || 0;
+          const localCredits = typeof local?.credits === 'number' ? local.credits : 0;
+          const credits = localCredits > 0 ? localCredits : backendCredits;
+          const cycle = (typeof c.cycle === 'number' && c.cycle > 0) ? c.cycle : (local?.cycle ?? c.cycle);
+          const name = (c.name && c.name.trim().length > 0) ? c.name : (local?.name ?? code);
+
+          return {
+            id: code,
+            name,
+            credits,
+            cycle: typeof cycle === 'number' ? cycle : (local?.cycle ?? 0),
+            prerequisites: normalizedPrereqs,
+            career: c.career ?? undefined,
+            status: 'not_taken',
+            isInStudyPlan: true,
+          } as Course;
+        });
+        if (mapped.length > 0) {
+          setCourses(mapped);
+        }
+      } catch {
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [getCourses, ingest]);
 
   const cycles = useMemo(() => {
     const cyclesSet = new Set<number>();
-    COURSES.forEach(course => cyclesSet.add(course.cycle));
+    courses.forEach(course => cyclesSet.add(course.cycle));
     return Array.from(cyclesSet).sort((a, b) => a - b);
-  }, []);
+  }, [courses]);
+
+  const careers = useMemo(() => {
+    const map = new Map<string, string>();
+    courses.forEach((c) => {
+      const name = (c.career || '').trim();
+      if (name) map.set(name.toLowerCase(), name);
+    });
+    return Array.from(map.values())
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ id: name, name }));
+  }, [courses]);
 
 
   const updateFilteredCourses = useCallback((cycle: number | null) => {
@@ -52,14 +132,21 @@ export const useDashboard = (): UseDashboardReturn => {
       setFilteredCourses([]);
       return;
     }
-    setFilteredCourses(COURSES.filter(course => course.cycle === cycle));
-  }, []);
+    setFilteredCourses(courses.filter(course => course.cycle === cycle));
+  }, [courses]);
 
 
   const handleCareerChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const career = e.target.value;
     setSelectedCareer(career);
   }, []);
+
+  const visibleCourses = useMemo(() => {
+    const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const selected = normalize(selectedCareer);
+    if (!selected) return courses;
+    return courses.filter((course) => normalize(course.career || '') === selected);
+  }, [courses, selectedCareer]);
 
 
   const handleSelectCycle = useCallback((cycle: number | null) => {
@@ -78,31 +165,40 @@ export const useDashboard = (): UseDashboardReturn => {
 
 
   const handleCourseSelect = useCallback((courseId: string) => {
-    // Toggle selection
     const newSelectedId = selectedCourseId === courseId ? null : courseId;
     setSelectedCourseId(newSelectedId);
     
-    // Find the selected course
-    const course = COURSES.find(c => c.id === courseId);
+    const course = courses.find(c => c.id === courseId);
     if (course) {
-      // Update the selected cycle to the course's cycle
       setSelectedCycle(course.cycle);
-      // Ensure the cycle is expanded
       setExpandedCycles(prev => 
         prev.includes(course.cycle) ? prev : [...prev, course.cycle]
       );
     }
     
-    // Update filtered courses based on the selection
     if (newSelectedId) {
       updateFilteredCourses(course?.cycle || null);
     } else {
       updateFilteredCourses(null);
     }
-  }, [selectedCourseId, updateFilteredCourses]);
+  }, [selectedCourseId, updateFilteredCourses, courses]);
 
 
   const handleLogout = useCallback(() => {
+    try {
+      if (typeof document !== 'undefined') {
+        document.cookie = 'auth-token=; path=/; max-age=0';
+      }
+    } catch {
+    }
+
+    setSelectedCycle(null);
+    setSelectedCareer('');
+    setExpandedCycles([]);
+    setFilteredCourses([]);
+    setSelectedCourseId(null);
+    setCourses([]);
+
     router.push('/');
   }, [router]);
 
@@ -140,10 +236,12 @@ export const useDashboard = (): UseDashboardReturn => {
 
   return {
     selectedCycle,
+    selectedCareer,
     selectedCourseId,
     expandedCycles,
     filteredCourses,
     courses,
+    visibleCourses,
     handleCareerChange,
     handleClearFilters,
     handleLogout,
@@ -154,5 +252,6 @@ export const useDashboard = (): UseDashboardReturn => {
     updateCourseStatus,
     CAREERS,
     cycles,
+    careers,
   };
 };

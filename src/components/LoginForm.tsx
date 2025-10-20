@@ -1,14 +1,72 @@
 "use client";
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+
+const extractToken = (data: unknown): string | null => {
+  if (!data) {
+    return null;
+  }
+
+  if (typeof data === 'string') {
+    return data.trim().length > 0 ? data : null;
+  }
+
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const token = extractToken(item);
+      if (token) {
+        return token;
+      }
+    }
+    return null;
+  }
+
+  if (typeof data !== 'object') {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+  const directKeys = ['token', 'accessToken', 'access_token', 'access'];
+
+  for (const key of directKeys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  for (const key of Object.keys(record)) {
+    if (key.toLowerCase().includes('token')) {
+      const value = record[key];
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value;
+      }
+    }
+  }
+
+  const nestedKeys = ['data', 'result', 'payload', 'tokens', 'auth'];
+
+  for (const key of nestedKeys) {
+    const value = record[key];
+    if (value && typeof value === 'object') {
+      const token = extractToken(value);
+      if (token) {
+        return token;
+      }
+    }
+  }
+
+  return null;
+};
 
 export const LoginForm = () => {
   
   const dashboardPath = '/dashboard';
   const { t } = useTranslation('Login');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -33,19 +91,28 @@ export const LoginForm = () => {
 
     try {
       const response = await signIn(formData);
-      const token = typeof response === 'object' && response !== null
-        ? 'token' in response && typeof response.token === 'string'
-          ? response.token
-          : 'accessToken' in response && typeof response.accessToken === 'string'
-            ? response.accessToken
-            : null
-        : null;
+      const callbackUrlParam = searchParams.get('callbackUrl');
+      const redirectPath = callbackUrlParam && callbackUrlParam.startsWith('/')
+        ? callbackUrlParam
+        : dashboardPath;
+      const token = extractToken(response);
 
-      if (token) {
-        document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+      if (!token) {
+        const responseMessage = typeof response === 'object' && response !== null
+          ? 'message' in response && typeof response.message === 'string'
+            ? response.message
+            : 'detail' in response && typeof response.detail === 'string'
+              ? response.detail
+              : null
+          : null;
+
+        setError(responseMessage ?? 'Invalid credentials');
+        return;
       }
 
-      router.push(dashboardPath);
+      document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+
+      router.push(redirectPath);
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'Unexpected error');
     } finally {

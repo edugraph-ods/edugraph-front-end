@@ -107,7 +107,7 @@ export const AuthContainer = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-50 p-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-50 p-4 overflow-auto">
       <div className="absolute top-4 right-4 z-50">
         <LanguageSwitcher />
       </div>
@@ -171,9 +171,9 @@ export const AuthContainer = () => {
           >
             <div className="w-full max-w-md flex flex-col justify-center h-full ">
               {showRegister ? (
-                <RegisterForm onSwitchToLogin={() => setShowRegister(false)} />
+                <RegisterForm />
               ) : (
-                <LoginForm onSwitchToRegister={() => setShowRegister(true)} />
+                <LoginForm />
               )}
             </div>
           </motion.div>
