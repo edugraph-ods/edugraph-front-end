@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Course } from '../hooks/use-course';
 import ReactFlow, {
   Background,
@@ -33,6 +33,7 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
   onCourseSelect,
   onStatusChange 
 }) => {
+  const [detailCourseId, setDetailCourseId] = useState<string | null>(null);
 
   const {
     nodes,
@@ -122,7 +123,9 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
                             ? 'border-blue-300 bg-blue-50' 
                             : 'border-gray-200'
                       } hover:shadow-md transition-shadow cursor-pointer`}
-                      onClick={() => onCourseSelect?.(item.id)}
+                      onClick={() => {
+                        onCourseSelect?.(item.id);
+                      }}
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -172,6 +175,18 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
                           </div>
                         </div>
                       )}
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDetailCourseId(item.id);
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          Ver detalle
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -251,6 +266,115 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
       <div className="border-t border-gray-200 p-4 bg-white shadow-inner" style={{ flexShrink: 0, maxHeight: '40%', overflowY: 'auto' }}>
         {renderSchedule()}
       </div>
+
+      {detailCourseId ? (() => {
+        const course = scheduleCourses.find(c => c.id === detailCourseId);
+        const node = nodes.find(n => n.id === detailCourseId);
+        if (!course || !node) return null;
+
+        const prereqLabels = (node.data.prerequisites || []).map((id) => {
+          const match = scheduleCourses.find(c => c.id === id) || courses.find(c => c.id === id);
+          return match?.name || id;
+        });
+
+        const dependents = nodes
+          .filter(n => (n.data.prerequisites || []).includes(detailCourseId))
+          .map(n => {
+            const match = scheduleCourses.find(c => c.id === n.id) || courses.find(c => c.id === n.id);
+            return match?.name || n.id;
+          });
+
+        return (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Detalle del curso</h2>
+                </div>
+                <button
+                  onClick={() => setDetailCourseId(null)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  aria-label="Cerrar diálogo"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="col-span-2">
+                  <p className="text-gray-500">Nombre del curso</p>
+                  <p className="font-medium">{course.name}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-500">Código</p>
+                  <p className="font-medium">{course.id}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-500">Universidad</p>
+                  <p className="font-medium">{course.university || 'No especificada'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-500">Programa</p>
+                  <p className="font-medium">{course.program || 'No especificado'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-500">Carrera</p>
+                  <p className="font-medium">{course.career || 'No especificada'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Ciclo</p>
+                  <p className="font-medium">{course.cycle}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Créditos</p>
+                  <p className="font-medium">{course.credits}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Estado</p>
+                  <p className="font-medium capitalize">{node.data.status === 'not_taken' ? 'No rendido' : node.data.status === 'approved' ? 'Aprobado' : 'Desaprobado'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Ruta crítica</p>
+                  <p className="font-medium">{node.data.isInCriticalPath ? 'Sí' : 'No'}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Prerrequisitos</p>
+                  {prereqLabels.length ? (
+                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                      {prereqLabels.map((label, idx) => (
+                        <li key={`${detailCourseId}-pr-${idx}`}>{label}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500">No requiere cursos previos.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Liberará</p>
+                  {dependents.length ? (
+                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                      {dependents.map((label, idx) => (
+                        <li key={`${detailCourseId}-dep-${idx}`}>{label}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500">No desbloquea cursos adicionales.</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setDetailCourseId(null)}
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
     </div>
   );
 };

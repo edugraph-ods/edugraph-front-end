@@ -8,6 +8,8 @@ export interface Course {
   prerequisites: string[];
   status: CourseStatus;
   career?: string;
+  university?: string;
+  program?: string;
   isInStudyPlan?: boolean;
 }
 

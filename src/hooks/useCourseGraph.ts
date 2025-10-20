@@ -82,7 +82,7 @@ export const useCourseGraph = (courses: Course[] = []) => {
     return positions;
   }, []);
 
-  const generateEdges = useCallback((nodes: CourseNode[], criticalPath: string[] = []): Edge[] => {
+  const generateEdges = useCallback((nodes: CourseNode[], activeCriticalIds: Set<string>): Edge[] => {
     const edges: Edge[] = [];
     const nodeMap = new Map(nodes.map(node => [node.id, node]));
 
@@ -90,9 +90,7 @@ export const useCourseGraph = (courses: Course[] = []) => {
       const targetId = node.id;
       node.data.prerequisites?.forEach(sourceId => {
         if (!nodeMap.has(sourceId)) return;
-        const isCriticalEdge = criticalPath.includes(sourceId) &&
-          criticalPath.includes(targetId) &&
-          (criticalPath.indexOf(sourceId) + 1 === criticalPath.indexOf(targetId));
+        const isCriticalEdge = activeCriticalIds.has(sourceId) && activeCriticalIds.has(targetId);
         const edgeId = `${sourceId}-${targetId}`;
         
         if (edges.some(e => e.id === edgeId)) return;
@@ -189,17 +187,25 @@ export const useCourseGraph = (courses: Course[] = []) => {
   useEffect(() => {
     if (!courseNodes.length) return;
 
+    const activeCriticalIds = new Set<string>();
+    const pathLookup = new Set(criticalPath);
+    courseNodes.forEach(node => {
+      if (pathLookup.has(node.id) && node.data.status !== 'approved') {
+        activeCriticalIds.add(node.id);
+      }
+    });
+
     const updatedNodes = courseNodes.map(node => ({
       ...node,
       data: { 
         ...node.data, 
-        isCritical: criticalPath.includes(node.id), 
-        isInCriticalPath: criticalPath.includes(node.id) 
+        isCritical: activeCriticalIds.has(node.id), 
+        isInCriticalPath: activeCriticalIds.has(node.id) 
       }
     }));
 
     setNodes(updatedNodes);
-    setEdges(generateEdges(updatedNodes, criticalPath));
+    setEdges(generateEdges(updatedNodes, activeCriticalIds));
   }, [courseNodes, criticalPath, setNodes, setEdges, generateEdges]);
 
   return {

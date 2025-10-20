@@ -51,9 +51,17 @@ export const CourseNode = React.memo<CourseNodeProps>(({ id, data, onStatusChang
 
   const statusColor = (() => {
     switch (data.status) {
-      case 'approved': return 'bg-green-50 border-green-300 text-green-800';
-      case 'failed': return 'bg-red-50 border-red-300 text-red-800';
-      default: return 'bg-white border-gray-200 text-gray-800';
+      case 'approved': return 'bg-green-50 text-green-800';
+      case 'failed': return 'bg-red-50 text-red-800';
+      default: return 'bg-white text-gray-800';
+    }
+  })();
+
+  const borderClass = (() => {
+    switch (data.status) {
+      case 'approved': return 'border border-green-300';
+      case 'failed': return 'border border-red-300';
+      default: return 'border border-gray-200';
     }
   })();
 
@@ -69,11 +77,11 @@ export const CourseNode = React.memo<CourseNodeProps>(({ id, data, onStatusChang
 
   const criticalClasses = data.isInCriticalPath
     ? 'border-2 border-yellow-500 shadow-lg ring-2 ring-yellow-300/60 animate-pulse'
-    : 'border';
+    : borderClass;
 
   return (
     <div
-      className={`p-3 rounded-lg ${criticalClasses} ${statusColor} shadow-sm hover:shadow-md transition-all duration-200 relative`}
+      className={`p-3 rounded-lg ${statusColor} ${criticalClasses} shadow-sm hover:shadow-md transition-all duration-200 relative`}
       style={{ borderLeftWidth: '5px', borderLeftColor: data.isInCriticalPath ? '#f59e0b' : 'transparent' }}
       data-id={id}
       onMouseEnter={() => setShowStatusMenu(true)}
