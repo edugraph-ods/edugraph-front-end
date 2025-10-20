@@ -19,7 +19,6 @@ export default function Dashboard() {
     selectedCareer,
     selectedCourseId,
     expandedCycles,
-    filteredCourses,
     handleCareerChange,
     handleClearFilters,
     handleLogout,
@@ -31,6 +30,8 @@ export default function Dashboard() {
     CAREERS,
     cycles,
     courses,
+    visibleCourses,
+    careers,
   } = useDashboard();
 
   const handleStatusChange = useCallback(
@@ -93,8 +94,8 @@ export default function Dashboard() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Todas las carreras</option>
-                {CAREERS.map((career) => (
-                  <option key={career.id} value={career.id}>
+                {careers.map((career) => (
+                  <option key={career.id} value={career.name}>
                     {career.name}
                   </option>
                 ))}
@@ -123,9 +124,11 @@ export default function Dashboard() {
                   </button>
                   {expandedCycles.includes(cycle) && (
                     <div className="p-2 space-y-1">
-                      {courses
-                        .filter((course) => course.cycle === cycle)
-                        .map((course) => (
+                      {(() => {
+                        const list = visibleCourses
+                          .filter((course) => course.cycle === cycle);
+                        const unique = Array.from(new Map(list.map((course) => [course.id, course])).values());
+                        return unique.map((course) => (
                           <div
                             key={course.id}
                             onClick={() => handleCourseSelect(course.id)}
@@ -153,7 +156,8 @@ export default function Dashboard() {
                               {course.credits} créditos
                             </span>
                           </div>
-                        ))}
+                        ));
+                      })()}
                     </div>
                   )}
                 </div>
@@ -165,7 +169,8 @@ export default function Dashboard() {
           <div className="lg:col-span-3 bg-white rounded-xl p-6 shadow-sm">
             <div className="h-full">
               <CourseGraph
-                courses={courses}
+                courses={visibleCourses}
+                displayCourses={visibleCourses}
                 selectedCycle={selectedCycle}
                 selectedCourseId={selectedCourseId}
                 onCourseSelect={handleCourseSelect}
