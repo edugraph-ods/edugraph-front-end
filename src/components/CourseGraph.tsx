@@ -35,6 +35,8 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
 }) => {
   const [detailCourseId, setDetailCourseId] = useState<string | null>(null);
 
+  const scheduleCourses = displayCourses && displayCourses.length ? displayCourses : courses;
+
   const {
     nodes,
     edges,
@@ -42,9 +44,7 @@ const CourseGraph: React.FC<CourseGraphProps> = ({
     onEdgesChange,
     setEdges,
     isLoading
-  } = useCourseGraph(courses);
-
-  const scheduleCourses = displayCourses && displayCourses.length ? displayCourses : courses;
+  } = useCourseGraph(scheduleCourses);
 
   const getCurrentStatus = useCallback((courseId: string): CourseStatus => {
     const node = nodes.find(n => n.id === courseId);

@@ -220,4 +220,3 @@ export const LoginForm = () => {
     </div>
   );
 };
-

@@ -18,10 +18,10 @@ export type DetectCyclesResponse = {
 };
 
 export type IngestRequest = {
-  source_path?: string | null;
-  university?: string | null;
-  career?: string | null;
-  program?: string | null;
+  source_path?: string;
+  university?: string;
+  career?: string;
+  program?: string;
 };
 
 export type PlanRequest = {
@@ -41,7 +41,7 @@ export type PlanResponse = {
 };
 
 export const useGraphApi = () => {
-  const ingest = useCallback(async (payload: IngestRequest = {}) => {
+  const ingest = useCallback(async (payload: IngestRequest) => {
     return postJson<CourseOut[]>("/api/v1/graph/ingest", payload);
   }, []);
 
@@ -54,8 +54,16 @@ export const useGraphApi = () => {
   }, []);
 
   const plan = useCallback(async (payload: PlanRequest) => {
+    if (payload.max_credits === undefined) {
+      throw new Error("max_credits es requerido para generar el plan");
+    }
     return postJson<PlanResponse>("/api/v1/graph/plan", payload);
   }, []);
 
-  return { ingest, getCourses, detectCycles, plan };
+  return { 
+    ingest, 
+    getCourses, 
+    detectCycles, 
+    plan 
+  };
 };
