@@ -11,7 +11,7 @@ type SignUpPayload = {
   password: string;
 };
 
-const DEFAULT_API_BASE_URL = "";
+const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
 const resolveApiBase = () => {
   const envBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? DEFAULT_API_BASE_URL;
@@ -87,6 +87,7 @@ const request = async <TResponse>(path: string, payload: unknown): Promise<TResp
       Accept: "application/json",
     },
     body: JSON.stringify(payload),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -120,4 +121,3 @@ export const useAuth = () => {
     signUp,
   };
 };
-

@@ -1,10 +1,10 @@
-const DEFAULT_API_BASE_URL = "";
+const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
 const resolveApiBase = () => {
   const envBase =
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_BACKEND_URL ??
-    DEFAULT_API_BASE_URL;
+    (DEFAULT_API_BASE_URL || "http://localhost:8000");
   const trimmedBase = envBase.trim();
   if (trimmedBase.length === 0) return DEFAULT_API_BASE_URL;
   return trimmedBase.endsWith("/") ? trimmedBase.slice(0, -1) : trimmedBase;
@@ -66,6 +66,9 @@ type JsonInit = {
 
 export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
   const token = getToken();
+  const url = buildUrl(path);
+  // simple tracing
+  console.debug("GET", url);
   const response = await fetch(buildUrl(path), {
     method: init?.method ?? "GET",
     headers: {
@@ -73,6 +76,7 @@ export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
+    credentials: "include",
   });
   if (!response.ok) {
     throw new Error(await parseErrorMessage(response));
@@ -91,7 +95,9 @@ export const postJson = async <T>(
   init?: JsonInit
 ): Promise<T> => {
   const token = getToken();
-  const response = await fetch(buildUrl(path), {
+  const url = buildUrl(path);
+  console.debug("POST", url, body);
+  const response = await fetch(url, {
     method: init?.method ?? "POST",
     headers: {
       "Content-Type": "application/json",
@@ -100,6 +106,7 @@ export const postJson = async <T>(
       ...(init?.headers ?? {}),
     },
     body: JSON.stringify(body ?? {}),
+    credentials: "include",
   });
   if (!response.ok) {
     throw new Error(await parseErrorMessage(response));

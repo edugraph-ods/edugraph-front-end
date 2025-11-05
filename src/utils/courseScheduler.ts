@@ -228,21 +228,24 @@ export class OptimizedCourseScheduler {
       ? uniqueCycles
           .map((cycle, i) => {
             const isTruncated = cycle.length > 25;
-            const display = isTruncated
-              ? [...cycle.slice(0, 25), "..."]
-              : cycle;
+            const display = isTruncated ? [...cycle.slice(0, 25), "..."] : cycle;
             const base = display.join(" -> ");
-            const closure =
-              !isTruncated && cycle.length > 0 ? ` -> ${cycle[0]}` : "";
+            const closure = !isTruncated && cycle.length > 0 ? ` -> ${cycle[0]}` : "";
             return `Ciclo ${i + 1}: ${base}${closure}`;
           })
           .join("\n")
       : "No se pudo determinar un ciclo simple, pero existe un ciclo en el grafo.";
 
-    throw new SchedulingError(
-      `Se detectaron ciclos en los prerrequisitos:\n${cycleMessages}`,
-      "CYCLE_DETECTED"
+    console.warn(
+      `Se detectaron ciclos en los prerrequisitos. Se continuará con un orden parcial.\n${cycleMessages}`
     );
+
+    const remainingList = Array.from(remaining);
+    const completed = new Set(order);
+    for (const id of remainingList) {
+      if (!completed.has(id)) order.push(id);
+    }
+    return order;
   }
 
   private calculateCriticalPath() {
