@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { CourseStatus, Course } from "@/hooks/use-course";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useGraphApi } from "@/hooks/use-graph";
+import { ThemeToggle } from "@/components/theme-provider";
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph"), {
   ssr: false,
@@ -117,32 +118,33 @@ export default function Dashboard() {
   }, [ingest, getCourses, detectCycles, setCoursesList]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-background text-foreground transition-colors">
       {/* Header */}
-      <header className="flex items-center justify-between p-4 bg-white shadow-sm">
-        <div className="flex items-center space-x-2">
+      <header className="flex items-center justify-between p-4 bg-card shadow-sm border-b border-border">
+        <div className="flex items-center space-x-4">
           <img
             src="/logo.jpg"
             alt="EduGraph Logo"
-            className="h-8 w-8 rounded-full"
+            className="h-8 w-8 rounded-full border border-border"
           />
-          <h1 className="text-xl font-bold">EduGraph</h1>
+          <h1 className="text-xl font-bold text-foreground">EduGraph</h1>
+          <ThemeToggle />
         </div>
 
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 cursor-pointer group">
-            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-              <FiUser className="text-indigo-600" />
+            <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+              <FiUser className="text-secondary-foreground" />
             </div>
-            <FiChevronDown className="group-hover:rotate-180 transition-transform" />
+            <FiChevronDown className="group-hover:rotate-180 transition-transform text-muted-foreground" />
           </div>
 
           <button
             onClick={handleLogout}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            className="p-2 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
             title="Cerrar sesión"
           >
-            <FiLogOut size={20} />
+            <FiLogOut size={20} className="text-muted-foreground hover:text-foreground" />
           </button>
         </div>
       </header>
@@ -151,14 +153,14 @@ export default function Dashboard() {
       <div className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters */}
-          <div className="lg:col-span-1 bg-white rounded-xl p-6 shadow-sm">
+          <div className="lg:col-span-1 bg-card rounded-lg p-6 shadow-sm border border-border">
             <h2 className="text-lg font-semibold mb-4">Filtros</h2>
 
             {/* Career Selector */}
             <div className="mb-6">
               <label
                 htmlFor="career"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-foreground mb-1"
               >
                 Carrera
               </label>
@@ -166,7 +168,7 @@ export default function Dashboard() {
                 id="career"
                 value={selectedCareer}
                 onChange={handleCareerChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="flex items-center justify-between w-full p-2 text-left text-sm font-medium text-foreground bg-background border border-input rounded-md shadow-sm hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
               >
                 <option value="">Todas las carreras</option>
                 {(careers.length ? careers : CAREERS).map((career) => (
@@ -198,14 +200,18 @@ export default function Dashboard() {
                     const v = Number(e.target.value);
                     setCreditLimit(Number.isFinite(v) && v > 0 ? v : null);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-input bg-background rounded-md shadow-sm focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
               {isOverCreditLimit && (
                 <p className="mt-2 text-xs text-red-600">Advertencia: has superado el límite de {creditLimit} créditos.</p>
               )}
               <button
-                className={`mt-3 w-full px-3 py-2 rounded text-sm font-medium ${typeof creditLimit === 'number' && creditLimit > 0 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+                className={`mt-3 w-full px-3 py-2 rounded text-sm font-medium transition-colors ${
+                  typeof creditLimit === 'number' && creditLimit > 0
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                }`}
                 disabled={!(typeof creditLimit === 'number' && creditLimit > 0)}
                 onClick={handleConfirmSelection}
               >
@@ -223,10 +229,10 @@ export default function Dashboard() {
                 <div key={cycle} className="space-y-1">
                   <button
                     onClick={() => toggleCycle(cycle)}
-                    className={`w-full flex justify-between items-center p-3 ${
+                    className={`w-full flex justify-between items-center p-3 rounded-md ${
                       expandedCycles.includes(cycle)
-                        ? "bg-blue-50 text-blue-700"
-                        : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-muted hover:bg-accent/50 text-foreground"
                     } transition-colors`}
                   >
                     <span className="font-medium">Ciclo {cycle}</span>
@@ -244,11 +250,11 @@ export default function Dashboard() {
                           <div
                             key={course.id}
                             onClick={() => handleCourseSelect(course.id)}
-                            className={`flex items-center py-1.5 px-3 text-sm cursor-pointer ${
+                            className={`flex items-center py-1.5 px-3 text-sm cursor-pointer rounded-md ${
                               selectedCourseId === course.id
-                                ? "text-blue-700"
-                                : "text-gray-700 hover:bg-gray-50"
-                            }`}
+                                ? "bg-accent text-accent-foreground"
+                                : "hover:bg-accent/50"
+                            } transition-colors`}
                           >
                             <input
                               type="checkbox"
@@ -262,16 +268,16 @@ export default function Dashboard() {
                             <span
                               className={`w-1.5 h-1.5 rounded-full ${
                                 selectedCourseId === course.id
-                                  ? "bg-blue-600"
-                                  : "bg-gray-400"
+                                  ? "bg-primary"
+                                  : "bg-muted-foreground/30"
                               } mr-3`}
                             ></span>
                             <span className="truncate">{course.name}</span>
                             <span
                               className={`ml-auto text-xs px-1.5 py-0.5 rounded ${
                                 selectedCourseId === course.id
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-gray-100 text-gray-500"
+                                  ? "bg-primary/10 text-primary-foreground"
+                                  : "bg-muted text-muted-foreground"
                               }`}
                             >
                               {course.credits} créditos
@@ -286,7 +292,7 @@ export default function Dashboard() {
           </div>
 
           {/* Graph */}
-          <div className="lg:col-span-3 bg-white rounded-xl p-6 shadow-sm">
+          <div className="lg:col-span-3 bg-card rounded-xl p-6 shadow-sm border border-border">
             <div className="h-full">
               <CourseGraph
                 courses={courses}
@@ -297,7 +303,7 @@ export default function Dashboard() {
                 onStatusChange={handleStatusChange}
               />
               {planResult && (
-                <div className="mt-4 p-4 border rounded bg-gray-50">
+                <div className="mt-4 p-4 border rounded bg-muted/30">
                   <h3 className="font-semibold mb-2">Plan generado</h3>
                   <p className="text-sm mb-2">Total de ciclos: {planResult.total_cycles}</p>
                   <div className="space-y-2">
@@ -307,11 +313,11 @@ export default function Dashboard() {
                         {cyc.courses.length > 0 ? (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {cyc.courses.map((code) => (
-                              <span key={code} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">{code}</span>
+                              <span key={code} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-sm">{code}</span>
                             ))}
                           </div>
                         ) : (
-                          <div className="text-gray-500">Sin cursos</div>
+                          <div className="text-muted-foreground">Sin cursos</div>
                         )}
                       </div>
                     ))}
