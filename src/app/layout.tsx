@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import { Inter } from 'next/font/google';
-import { useState, useEffect } from 'react';
-import { Providers } from './providers';
-import Loading from './loading';
-import '@/styles/globals.css';
+import { Inter } from "next/font/google";
+import { useState, useEffect } from "react";
+import { Providers } from "./providers";
+import Loading from "./loading";
+import "@/styles/globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
@@ -24,8 +25,8 @@ export default function RootLayout({
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.history.scrollRestoration = 'manual';
+    if (typeof window !== "undefined") {
+      window.history.scrollRestoration = "manual";
     }
   }, []);
 
@@ -44,7 +45,14 @@ export default function RootLayout({
               <Loading />
             </div>
           ) : null}
-          {children}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
         </Providers>
       </body>
     </html>

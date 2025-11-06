@@ -1,17 +1,73 @@
 "use client";
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
-interface LoginFormProps {
-  onSwitchToRegister?: () => void;
-}
+const extractToken = (data: unknown): string | null => {
+  if (!data) {
+    return null;
+  }
 
-export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
+  if (typeof data === 'string') {
+    return data.trim().length > 0 ? data : null;
+  }
+
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const token = extractToken(item);
+      if (token) {
+        return token;
+      }
+    }
+    return null;
+  }
+
+  if (typeof data !== 'object') {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+  const directKeys = ['token', 'accessToken', 'access_token', 'access'];
+
+  for (const key of directKeys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  for (const key of Object.keys(record)) {
+    if (key.toLowerCase().includes('token')) {
+      const value = record[key];
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value;
+      }
+    }
+  }
+
+  const nestedKeys = ['data', 'result', 'payload', 'tokens', 'auth'];
+
+  for (const key of nestedKeys) {
+    const value = record[key];
+    if (value && typeof value === 'object') {
+      const token = extractToken(value);
+      if (token) {
+        return token;
+      }
+    }
+  }
+
+  return null;
+};
+
+export const LoginForm = () => {
   
   const dashboardPath = '/dashboard';
   const { t } = useTranslation('Login');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { signIn } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -27,12 +83,41 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    document.cookie = 'auth-token=demo-token; path=/; max-age=86400'; 
-    
-    window.location.href = '/dashboard';
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await signIn(formData);
+      const callbackUrlParam = searchParams.get('callbackUrl');
+      const redirectPath = callbackUrlParam && callbackUrlParam.startsWith('/')
+        ? callbackUrlParam
+        : dashboardPath;
+      const token = extractToken(response);
+
+      if (!token) {
+        const responseMessage = typeof response === 'object' && response !== null
+          ? 'message' in response && typeof response.message === 'string'
+            ? response.message
+            : 'detail' in response && typeof response.detail === 'string'
+              ? response.detail
+              : null
+          : null;
+
+        setError(responseMessage ?? 'Invalid credentials');
+        return;
+      }
+
+      document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+
+      router.push(redirectPath);
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : 'Unexpected error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -120,7 +205,8 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
         <div className="pt-4">
           <button
             type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer"
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer disabled:opacity-70"
+            disabled={isLoading}
             >
             {t('submit')}
           </button>
@@ -134,4 +220,3 @@ export const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
     </div>
   );
 };
-

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { CourseStatus } from '../hooks/use-course';
 import { FiCheck, FiX, FiClock } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 export interface CourseNodeData {
   label: string;
@@ -16,16 +17,18 @@ export interface CourseNodeData {
 }
 
 interface CourseNodeProps {
+  id: string;
   data: CourseNodeData;
   onStatusChange?: (courseId: string, newStatus: CourseStatus) => void;
 }
 
-export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange }) => {
+export const CourseNode = React.memo<CourseNodeProps>(({ id, data, onStatusChange }) => {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const { t } = useTranslation('dashboard');
 
   const handleStatusChange = (newStatus: CourseStatus) => {
     if (onStatusChange) {
-      onStatusChange(data.label, newStatus);
+      onStatusChange(id, newStatus);
     }
     setShowStatusMenu(false);
   };
@@ -50,9 +53,17 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
 
   const statusColor = (() => {
     switch (data.status) {
-      case 'approved': return 'bg-green-50 border-green-300 text-green-800';
-      case 'failed': return 'bg-red-50 border-red-300 text-red-800';
-      default: return 'bg-white border-gray-200 text-gray-800';
+      case 'approved': return 'bg-green-50 text-green-800';
+      case 'failed': return 'bg-red-50 text-red-800';
+      default: return 'bg-white text-gray-800';
+    }
+  })();
+
+  const borderClass = (() => {
+    switch (data.status) {
+      case 'approved': return 'border border-green-300';
+      case 'failed': return 'border border-red-300';
+      default: return 'border border-gray-200';
     }
   })();
 
@@ -64,15 +75,17 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
     }
   })();
 
-  const borderStyle = data.isInCriticalPath 
-    ? 'border-2 border-yellow-500 shadow-md' 
-    : 'border';
+  const creditsLabel = data.credits === 1 ? 'crédito' : 'créditos';
+
+  const criticalClasses = data.isInCriticalPath
+    ? 'border-2 border-yellow-500 shadow-lg ring-2 ring-yellow-300/60 animate-pulse'
+    : borderClass;
 
   return (
     <div
-      className={`p-3 rounded-lg ${borderStyle} ${statusColor} shadow-sm hover:shadow-md transition-all duration-200 relative`}
-      style={{ borderLeftWidth: '4px', borderLeftColor: data.isInCriticalPath ? '#f59e0b' : 'transparent' }}
-      data-id={data.label}
+      className={`p-3 rounded-lg ${statusColor} ${criticalClasses} shadow-sm hover:shadow-md transition-all duration-200 relative`}
+      style={{ borderLeftWidth: '5px', borderLeftColor: data.isInCriticalPath ? '#f59e0b' : 'transparent' }}
+      data-id={id}
       onMouseEnter={() => setShowStatusMenu(true)}
       onMouseLeave={() => setShowStatusMenu(false)}
     >
@@ -102,7 +115,7 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
                     >
-                      <FiCheck className="text-green-500" /> Aprobado
+                      <FiCheck className="text-green-500" /> {t('filters.detail.selector.approved')}
                     </button>
                     <button
                       onClick={(e) => {
@@ -111,7 +124,7 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
                     >
-                      <FiX className="text-red-500" /> Desaprobado
+                      <FiX className="text-red-500" /> {t('filters.detail.selector.reprobated')}
                     </button>
                     <button
                       onClick={(e) => {
@@ -120,7 +133,7 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                     >
-                      <FiClock className="text-gray-500" /> No rendido
+                      <FiClock className="text-gray-500" /> {t('filters.detail.selector.faild')}
                     </button>
                   </div>
                 )}
@@ -128,16 +141,16 @@ export const CourseNode = React.memo<CourseNodeProps>(({ data, onStatusChange })
             )}
           </div>
           <div className="text-sm mt-1">
-            <span className="font-medium">{data.credits}</span> créditos
+            <span className="font-medium">{data.credits}</span> {data.credits === 1 ? 'crédito' : 'créditos'}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-            Ciclo {data.cycle}
+            {t('filters.detail.cycle')}: {data.cycle}
           </span>
           {data.isInCriticalPath && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
-              Ruta Crítica
+              {t('filters.detail.selector.critical')}
             </span>
           )}
         </div>

@@ -1,10 +1,8 @@
 "use client";
 import { useState, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
-
-interface RegisterFormProps {
-  onSwitchToLogin?: () => void;
-}
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 const getPasswordStrength = (password: string) => {
   if (!password) return { score: 0, label: 'weak' };
@@ -30,12 +28,29 @@ const getPasswordStrength = (password: string) => {
   return { score, label };
 };
 
-export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
+export const RegisterForm = () => {
   const { t } = useTranslation('Register');
+  const router = useRouter();
+  const { signUp } = useAuth();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
   const [password, setPassword] = useState('');
-  
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
-  
+
+  const handleInputChange = (field: 'name' | 'email') => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   const getStrengthColor = () => {
     switch (passwordStrength.label) {
       case 'weak': return 'text-red-500';
@@ -44,7 +59,7 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
       default: return 'text-gray-500';
     }
   };
-  
+
   const getStrengthLabel = () => {
     switch (passwordStrength.label) {
       case 'weak': return t('weak');
@@ -53,8 +68,37 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
       default: return '';
     }
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await signUp({
+        name: formData.name,
+        email: formData.email,
+        password,
+      });
+
+      const token = typeof response === 'object' && response !== null
+        ? 'token' in response && typeof response.token === 'string'
+          ? response.token
+          : 'accessToken' in response && typeof response.accessToken === 'string'
+            ? response.accessToken
+            : null
+        : null;
+
+      if (token) {
+        document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+      }
+
+      router.push('/dashboard');
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : 'Unexpected error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,6 +116,9 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
             id="name"
             type="text"
             required
+            value={formData.name}
+            onChange={handleInputChange('name')}
+            disabled={isLoading}
             placeholder={t("namePlaceholder")}
             className="w-full px-4 py-3 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder-gray-400 text-gray-900"
           />
@@ -86,6 +133,9 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
             id="email"
             type="email"
             required
+            value={formData.email}
+            onChange={handleInputChange('email')}
+            disabled={isLoading}
             placeholder={t("emailPlaceholder")}
             className="w-full px-4 py-3 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder-gray-400 text-gray-900"
           />
@@ -103,6 +153,7 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
+            disabled={isLoading}
             placeholder={t("passwordPlaceholder")}
             className="w-full px-4 py-3 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder-gray-400 text-gray-900"
           />
@@ -139,6 +190,7 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
                 name="terms"
                 type="checkbox"
                 required
+                disabled={isLoading}
                 className="peer absolute inset-0 h-5 w-5 opacity-0 cursor-pointer"
               />
               <div className="h-5 w-5 flex items-center justify-center rounded border-2 border-gray-300 group-hover:border-blue-400 peer-checked:bg-blue-600 peer-checked:border-blue-600 peer-focus:ring-2 peer-focus:ring-blue-200 transition-colors duration-200">
@@ -166,10 +218,16 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer"
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer disabled:opacity-70"
+            disabled={isLoading}
           >
             {t("submit")}
           </button>
+          {error && (
+            <div className="text-red-500 text-sm mt-2 text-center">
+              {error}
+            </div>
+          )}
         </div>
       </form>
     </div>
