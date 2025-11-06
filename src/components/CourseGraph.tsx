@@ -20,6 +20,7 @@ import {
 } from "./CourseNode";
 import { useCourseGraph } from "../hooks/useCourseGraph";
 import { useTheme } from "next-themes";
+import { useTranslation } from 'react-i18next';
 
 type CourseStatus = "not_taken" | "approved" | "failed";
 
@@ -41,7 +42,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
   onStatusChange,
 }) => {
   const [detailCourseId, setDetailCourseId] = useState<string | null>(null);
-
+  const { t } = useTranslation('dashboard');
   const scheduleCourses =
     displayCourses && displayCourses.length ? displayCourses : courses;
 
@@ -103,7 +104,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
 
   const renderSchedule = () => {
     const creditLabel = (n: number) =>
-      `${n} ${n === 1 ? "crédito" : "créditos"}`;
+      `${n} ${n === 1 ? t('filters.detail.credit') : t('filters.detail.credits')}`;
     const allowedIds = new Set(scheduleCourses.map((c) => c.id));
     const nodeMap = new Map(nodes.map((n) => [n.id, n] as const));
 
@@ -139,14 +140,14 @@ const CourseGraph: FC<CourseGraphProps> = ({
     return (
       <div className="space-y-6">
         <h3 className="text-lg font-medium text-foreground">
-          Detalle del flujo
+          {t('detail.title')}
         </h3>
         {Object.entries(grouped)
           .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
           .map(([cycle, cycleItems]) => (
             <div key={`cycle-${cycle}`} className="space-y-2">
               <h4 className="text-md font-medium text-foreground/80">
-                Ciclo {cycle}
+                {t('detail.cycle')} {cycle}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {cycleItems.map((item) => (
@@ -184,9 +185,9 @@ const CourseGraph: FC<CourseGraphProps> = ({
                             getCurrentStatus(item.id)
                           )} hover:opacity-90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring`}
                         >
-                          <option value="not_taken">No rindió</option>
-                          <option value="approved">Aprobado</option>
-                          <option value="failed">Desaprobado</option>
+                          <option value="not_taken">{t('filters.detail.selector.faild')}</option>
+                          <option value="approved">{t('filters.detail.selector.approved')}</option>
+                          <option value="failed">{t('filters.detail.selector.reprobated')}</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
                           <svg
@@ -206,7 +207,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                     {item.prereqs.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-border">
                         <p className="text-xs text-muted-foreground mb-1">
-                          Requisitos:
+                          {t('filters.required')}
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {item.prereqs.map((prereqId, index) => {
@@ -239,7 +240,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                         }}
                         className="px-3 py-1.5 text-xs font-medium text-primary border border-input hover:bg-accent rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                       >
-                        Ver detalle
+                        {t('filters.detail.button')}
                       </button>
                     </div>
                   </div>
@@ -346,29 +347,29 @@ const CourseGraph: FC<CourseGraphProps> = ({
               className="bg-card p-4 rounded-lg shadow-lg border border-border"
             >
               <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">Leyenda</h3>
+                <h3 className="font-semibold text-foreground">{t('graph.title')}</h3>
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-600 rounded-full mr-2"></div>
-                  <span className="text-sm text-foreground">Aprobado</span>
+                  <span className="text-sm text-foreground">{t('graph.approved')}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-600 rounded-full mr-2"></div>
-                  <span className="text-sm text-foreground">Desaprobado</span>
+                  <span className="text-sm text-foreground">{t('graph.failed')}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-muted border border-border rounded-full mr-2"></div>
-                  <span className="text-sm text-foreground">No rendido</span>
+                  <span className="text-sm text-foreground">{t('graph.not_taken')}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-primary/10 border-2 border-primary rounded-full mr-2"></div>
-                  <span className="text-sm text-foreground">Curso Crítico</span>
+                  <span className="text-sm text-foreground">{t('graph.critical')}</span>
                 </div>
               </div>
             </Panel>
           </ReactFlow>
         ) : (
           <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-            Selecciona un curso para visualizar el grafo
+            {t('graph.description')}
           </div>
         )}
       </div>
@@ -414,7 +415,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                   <div className="flex items-start justify-between">
                     <div>
                       <h2 className="text-xl font-semibold text-foreground">
-                        Detalle del curso
+                        {t('course.title')}
                       </h2>
                     </div>
                     <button
@@ -427,47 +428,47 @@ const CourseGraph: FC<CourseGraphProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="col-span-2">
-                      <p className="text-muted-foreground">Nombre del curso</p>
+                      <p className="text-muted-foreground">{t('course.course')}</p>
                       <p className="font-medium text-foreground">
                         {course.name}
                       </p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-muted-foreground">Código</p>
+                      <p className="text-muted-foreground">{t('course.code')}</p>
                       <p className="font-medium text-foreground">{course.id}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-muted-foreground">Universidad</p>
+                      <p className="text-muted-foreground">{t('course.university')}</p>
                       <p className="font-medium text-foreground">
                         {course.university || "No especificada"}
                       </p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-muted-foreground">Programa</p>
+                      <p className="text-muted-foreground">{t('course.program')}</p>
                       <p className="font-medium text-foreground">
                         {course.program || "No especificado"}
                       </p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-muted-foreground">Carrera</p>
+                      <p className="text-muted-foreground">{t('course.career')}</p>
                       <p className="font-medium text-foreground">
                         {course.career || "No especificada"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Ciclo</p>
+                      <p className="text-muted-foreground">{t('course.cycle')}</p>
                       <p className="font-medium text-foreground">
                         {course.cycle}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Créditos</p>
+                      <p className="text-muted-foreground">{t('course.credits')}</p>
                       <p className="font-medium text-foreground">
                         {course.credits}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Estado</p>
+                      <p className="text-muted-foreground">{t('course.status')}</p>
                       <p className="font-medium capitalize text-foreground">
                         {(node.data as any).status === "not_taken"
                           ? "No rendido"
@@ -477,7 +478,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Ruta crítica</p>
+                      <p className="text-muted-foreground">{t('course.isInCriticalPath')}</p>
                       <p className="font-medium text-foreground">
                         {(node.data as any).isInCriticalPath ? "Sí" : "No"}
                       </p>
@@ -486,7 +487,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                   <div className="space-y-4 pt-2">
                     <div>
                       <p className="text-sm font-medium text-foreground">
-                        Prerrequisitos
+                        {t('course.prerequisites')}
                       </p>
                       {prereqLabels.length ? (
                         <ul className="mt-2 space-y-1.5">
@@ -504,13 +505,13 @@ const CourseGraph: FC<CourseGraphProps> = ({
                         </ul>
                       ) : (
                         <p className="text-sm text-muted-foreground mt-1">
-                          No requiere cursos previos.
+                          {t('course.not_required')}
                         </p>
                       )}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-foreground">
-                        Liberará
+                        {t('course.release')}
                       </p>
                       {dependents.length ? (
                         <ul className="mt-2 space-y-1.5">
@@ -528,7 +529,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                         </ul>
                       ) : (
                         <p className="text-sm text-muted-foreground mt-1">
-                          No desbloquea cursos adicionales.
+                          {t('course.nothing')}
                         </p>
                       )}
                     </div>
@@ -538,7 +539,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                       onClick={() => setDetailCourseId(null)}
                       className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
-                      Cerrar
+                      {t('course.close')}
                     </button>
                   </div>
                 </div>
