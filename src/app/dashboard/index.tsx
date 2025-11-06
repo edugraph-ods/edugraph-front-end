@@ -10,6 +10,34 @@ import { useGraphApi } from "@/hooks/use-graph";
 import { ThemeToggle } from "@/components/theme-provider";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslation } from 'react-i18next';
+import { getToken } from "@/lib/api-client";
+
+interface DecodedTokenPayload {
+  full_name?: string;
+  name?: string;
+  email?: string;
+  [key: string]: unknown;
+}
+
+const decodePayload = <T,>(token: string): T | null => {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = typeof window === "undefined"
+      ? Buffer.from(payload, "base64").toString("utf-8")
+      : atob(payload);
+    return JSON.parse(decoded) as T;
+  } catch {
+    return null;
+  }
+};
+
+const getUserInfo = (): DecodedTokenPayload | null => {
+  const token = getToken();
+  if (!token) return null;
+  return decodePayload<DecodedTokenPayload>(token);
+};
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph"), {
   ssr: false,
@@ -120,6 +148,35 @@ export default function Dashboard() {
     run();
   }, [ingest, getCourses, detectCycles, setCoursesList]);
 
+  const [userInfo, setUserInfo] = useState<DecodedTokenPayload | null>(null);
+
+  useEffect(() => {
+    setUserInfo(getUserInfo());
+  }, []);
+
+  const tooltipContent = useMemo(() => {
+    if (!userInfo) {
+      return (
+        <div className="px-4 py-3 text-sm text-muted-foreground">
+          {t("header.noUser", { defaultValue: "Sesión no identificada." })}
+        </div>
+      );
+    }
+
+    const { full_name, name, email } = userInfo;
+
+    return (
+      <div className="px-4 py-3 w-56">
+        <p className="text-sm font-semibold text-foreground">
+          {full_name ?? name ?? t("header.anonymous", { defaultValue: "Usuario" })}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground break-words">
+          {email ?? "user@example.com"}
+        </p>
+      </div>
+    );
+  }, [t, userInfo]);
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
       {/* Header */}
@@ -136,11 +193,18 @@ export default function Dashboard() {
         <div className="flex items-center space-x-4">
           <LanguageSwitcher />
           <ThemeToggle />
-          <div className="flex items-center space-x-2 cursor-pointer group">
-            <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-              <FiUser className="text-secondary-foreground" />
+          <div className="relative">
+            <div className="flex items-center space-x-2 cursor-pointer group peer">
+              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                <FiUser className="text-secondary-foreground" />
+              </div>
+              <FiChevronDown className="group-hover:rotate-180 transition-transform text-muted-foreground" />
             </div>
-            <FiChevronDown className="group-hover:rotate-180 transition-transform text-muted-foreground" />
+            <div className="pointer-events-none opacity-0 peer-hover:opacity-100 peer-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 mt-2 w-max z-10">
+              <div className="bg-popover text-popover-foreground border border-border rounded-md shadow-lg">
+                {tooltipContent}
+              </div>
+            </div>
           </div>
 
           <button

@@ -17,7 +17,7 @@ const buildUrl = (path: string) => {
   return `${API_BASE_URL}${normalizedPath}`;
 };
 
-const getToken = (): string | null => {
+export const getToken = (): string | null => {
   if (typeof document === "undefined") return null;
   const parts = document.cookie.split(";").map((c) => c.trim());
   for (const part of parts) {
