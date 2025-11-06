@@ -8,6 +8,8 @@ import { CourseStatus, Course } from "@/hooks/use-course";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useGraphApi } from "@/hooks/use-graph";
 import { ThemeToggle } from "@/components/theme-provider";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from 'react-i18next';
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph"), {
   ssr: false,
@@ -15,6 +17,7 @@ const CourseGraph = dynamic(() => import("@/components/CourseGraph"), {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { t } = useTranslation('dashboard');
   const { ingest, getCourses, detectCycles, plan } = useGraphApi();
   const [planResult, setPlanResult] = useState<{ total_cycles: number; cycles: { cycle: number; total_credits: number; courses: string[] }[] } | null>(null);
   const [planError, setPlanError] = useState<string>("");
@@ -127,11 +130,12 @@ export default function Dashboard() {
             alt="EduGraph Logo"
             className="h-8 w-8 rounded-full border border-border"
           />
-          <h1 className="text-xl font-bold text-foreground">EduGraph</h1>
-          <ThemeToggle />
+          <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
         </div>
 
         <div className="flex items-center space-x-4">
+          <LanguageSwitcher />
+          <ThemeToggle />
           <div className="flex items-center space-x-2 cursor-pointer group">
             <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
               <FiUser className="text-secondary-foreground" />
@@ -154,7 +158,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters */}
           <div className="lg:col-span-1 bg-card rounded-lg p-6 shadow-sm border border-border">
-            <h2 className="text-lg font-semibold mb-4">Filtros</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("filters.title")}</h2>
 
             {/* Career Selector */}
             <div className="mb-6">
@@ -162,7 +166,7 @@ export default function Dashboard() {
                 htmlFor="career"
                 className="block text-sm font-medium text-foreground mb-1"
               >
-                Carrera
+                {t("filters.career")}
               </label>
               <select
                 id="career"
@@ -170,7 +174,7 @@ export default function Dashboard() {
                 onChange={handleCareerChange}
                 className="flex items-center justify-between w-full p-2 text-left text-sm font-medium text-foreground bg-background border border-input rounded-md shadow-sm hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
               >
-                <option value="">Todas las carreras</option>
+                <option value="">{t("filters.careerPlaceholder")}</option>
                 {(careers.length ? careers : CAREERS).map((career) => (
                   <option key={career.id} value={career.id}>
                     {career.name}
@@ -181,15 +185,15 @@ export default function Dashboard() {
 
             {/* Academic Load */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Carga académica</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">{t("filters.loading")}</h3>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Total créditos</span>
+                <span className="text-sm text-gray-600">{t("filters.total")}</span>
                 <span className={`text-sm font-semibold px-2 py-1 rounded ${typeof creditLimit === 'number' && totalPlannedCredits < creditLimit ? 'bg-green-100 text-green-700' : (isOverCreditLimit ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700')}`}>
                   {totalPlannedCredits} / {typeof creditLimit === 'number' ? creditLimit : '-'}
                 </span>
               </div>
               <div className="mt-2">
-                <label htmlFor="creditLimit" className="block text-xs text-gray-600 mb-1">Límite de créditos</label>
+                <label htmlFor="creditLimit" className="block text-xs text-gray-600 mb-1">{t("filters.limit")}</label>
                 <input
                   id="creditLimit"
                   type="number"
@@ -204,7 +208,7 @@ export default function Dashboard() {
                 />
               </div>
               {isOverCreditLimit && (
-                <p className="mt-2 text-xs text-red-600">Advertencia: has superado el límite de {creditLimit} créditos.</p>
+                <p className="mt-2 text-xs text-red-600"> {t("filters.warning", {creditLimit})}</p>
               )}
               <button
                 className={`mt-3 w-full px-3 py-2 rounded text-sm font-medium transition-colors ${
@@ -215,7 +219,7 @@ export default function Dashboard() {
                 disabled={!(typeof creditLimit === 'number' && creditLimit > 0)}
                 onClick={handleConfirmSelection}
               >
-                Confirmar selección
+                {t("filters.button")}
               </button>
               {planError && (
                 <p className="mt-2 text-xs text-red-600">{planError}</p>
@@ -224,7 +228,7 @@ export default function Dashboard() {
 
             {/* Cycles List */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Ciclos</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">{t("filters.cycles")}</h3>
               {cycles.map((cycle) => (
                 <div key={cycle} className="space-y-1">
                   <button
@@ -235,7 +239,7 @@ export default function Dashboard() {
                         : "bg-muted hover:bg-accent/50 text-foreground"
                     } transition-colors`}
                   >
-                    <span className="font-medium">Ciclo {cycle}</span>
+                    <span className="font-medium">{t("filters.cycle")} {cycle}</span>
                     {expandedCycles.includes(cycle) ? (
                       <FiChevronUp className="text-blue-500" />
                     ) : (
@@ -280,7 +284,7 @@ export default function Dashboard() {
                                   : "bg-muted text-muted-foreground"
                               }`}
                             >
-                              {course.credits} créditos
+                              {course.credits} {t("filters.credits")}
                             </span>
                           </div>
                         ))}
@@ -304,12 +308,12 @@ export default function Dashboard() {
               />
               {planResult && (
                 <div className="mt-4 p-4 border rounded bg-muted/30">
-                  <h3 className="font-semibold mb-2">Plan generado</h3>
-                  <p className="text-sm mb-2">Total de ciclos: {planResult.total_cycles}</p>
+                  <h3 className="font-semibold mb-2">{t("detail.title")}</h3>
+                  <p className="text-sm mb-2">{t("detail.credits")}: {planResult.total_cycles}</p>
                   <div className="space-y-2">
                     {planResult.cycles.map((cyc) => (
                       <div key={`plan-cyc-${cyc.cycle}`} className="text-sm">
-                        <div className="font-medium">Ciclo {cyc.cycle} — {cyc.total_credits} créditos</div>
+                        <div className="font-medium">{t("detail.cycle")} {cyc.cycle} — {cyc.total_credits} {t("detail.credit")}</div>
                         {cyc.courses.length > 0 ? (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {cyc.courses.map((code) => (
@@ -317,7 +321,7 @@ export default function Dashboard() {
                             ))}
                           </div>
                         ) : (
-                          <div className="text-muted-foreground">Sin cursos</div>
+                          <div className="text-muted-foreground">{t("detail.nothing")}</div>
                         )}
                       </div>
                     ))}

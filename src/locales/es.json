@@ -54,5 +54,69 @@
     "loading": "Cargando...",
     "redirecting": "Redirigiendo...",
     "ready":"Listo"
+  },
+  "dashboard": {
+    "title": "EduGraph",
+    "description": "Plataforma Educativa de Grafos",
+    "loading": "Cargando...",
+    "redirecting": "Redirigiendo...",
+    "ready":"Listo",
+    "filters":{
+      "title": "Filtros",
+      "career":"Carrera",
+      "careerPlaceholder":"Carreras disponibles",
+      "loading":"Carga academica",
+      "total":"Total de creditos",
+      "warning":"Advertencia: has superado el límite de {creditLimit} créditos.",
+      "limit":"Limite de creditos",
+      "button":"Confirmar",
+      "cycles":"Ciclos",
+      "cycle":"Ciclo",
+      "required":"Requisitos",
+      "detail":{
+        "title":"Detalle del flujo",
+        "credits":"Creditos",
+        "cycle":"Ciclo",
+        "button":"Ver detalle",
+        "selector":{
+          "faild":"No rindió",
+          "approved":"Aprobado",
+          "reprobated":"Reprobado",
+          "critical":"Ruta Crítica"
+        }
+      }
+    },
+    "detail":{
+      "title":"Plan generado",
+      "credits":"Total de ciclos:",
+      "cycle":"Ciclo",
+      "credit":"creditos",
+      "nothing":"Sin cursos"
+    },
+    "graph":{
+      "title":"Legend",
+      "description":"Selecciona un curso para visualizar el grafo",
+      "approved":"Aprobado",
+      "failed":"Desaprobado",
+      "not_taken":"No rendido",
+      "critical":"Curso Critico"
+    },
+    "course":{
+      "title":"Detalle del curso",
+      "course":"Nombre del curso",
+      "code":"Código",
+      "university":"Universidad",
+      "program":"Programa",
+      "career":"Carrera",
+      "cycle":"Ciclo",
+      "credits":"Creditos",
+      "status":"Estado",
+      "isInCriticalPath":"Ruta critica",
+      "prerequisites":"Prerrequisitos",
+      "not_required":"No requiere cursos previos.",
+      "liberar":"Liberará",
+      "nothing":"No desbloquea cursos adicionales.",
+      "close":"Cerrar"
+    }
   }
 }
