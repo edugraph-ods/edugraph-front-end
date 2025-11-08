@@ -3,63 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-
-const extractToken = (data: unknown): string | null => {
-  if (!data) {
-    return null;
-  }
-
-  if (typeof data === 'string') {
-    return data.trim().length > 0 ? data : null;
-  }
-
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      const token = extractToken(item);
-      if (token) {
-        return token;
-      }
-    }
-    return null;
-  }
-
-  if (typeof data !== 'object') {
-    return null;
-  }
-
-  const record = data as Record<string, unknown>;
-  const directKeys = ['token', 'accessToken', 'access_token', 'access'];
-
-  for (const key of directKeys) {
-    const value = record[key];
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value;
-    }
-  }
-
-  for (const key of Object.keys(record)) {
-    if (key.toLowerCase().includes('token')) {
-      const value = record[key];
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value;
-      }
-    }
-  }
-
-  const nestedKeys = ['data', 'result', 'payload', 'tokens', 'auth'];
-
-  for (const key of nestedKeys) {
-    const value = record[key];
-    if (value && typeof value === 'object') {
-      const token = extractToken(value);
-      if (token) {
-        return token;
-      }
-    }
-  }
-
-  return null;
-};
+import { writeAuthToken, extractAuthToken, clearAuthToken } from '@/shared/utils/authToken';
 
 export const LoginForm = () => {
   
@@ -95,7 +39,7 @@ export const LoginForm = () => {
       const redirectPath = callbackUrlParam && callbackUrlParam.startsWith('/')
         ? callbackUrlParam
         : dashboardPath;
-      const token = extractToken(response);
+      const token = extractAuthToken(response);
 
       if (!token) {
         const responseMessage = typeof response === 'object' && response !== null
@@ -110,7 +54,8 @@ export const LoginForm = () => {
         return;
       }
 
-      document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+      clearAuthToken();
+      writeAuthToken(token);
 
       router.push(redirectPath);
     } catch (submissionError) {

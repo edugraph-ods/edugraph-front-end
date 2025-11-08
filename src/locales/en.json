@@ -58,6 +58,7 @@
     "filters": {
       "title": "Filters",
       "career": "Career",
+      "credits":"Credits",
       "careerPlaceholder": "Available Careers",
       "loading": "Academic Load",
       "total": "Total Credits",

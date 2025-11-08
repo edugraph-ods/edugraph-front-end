@@ -94,7 +94,7 @@
       "nothing":"Sin cursos"
     },
     "graph":{
-      "title":"Legend",
+      "title":"Leyenda",
       "description":"Selecciona un curso para visualizar el grafo",
       "approved":"Aprobado",
       "failed":"Desaprobado",

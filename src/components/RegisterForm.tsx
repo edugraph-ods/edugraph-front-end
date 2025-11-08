@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { extractAuthToken, writeAuthToken } from '@/shared/utils/authToken';
 
 const getPasswordStrength = (password: string) => {
   if (!password) return { score: 0, label: 'weak' };
@@ -81,16 +82,10 @@ export const RegisterForm = () => {
         password,
       });
 
-      const token = typeof response === 'object' && response !== null
-        ? 'token' in response && typeof response.token === 'string'
-          ? response.token
-          : 'accessToken' in response && typeof response.accessToken === 'string'
-            ? response.accessToken
-            : null
-        : null;
+      const token = extractAuthToken(response);
 
       if (token) {
-        document.cookie = `auth-token=${token}; path=/; max-age=86400`;
+        writeAuthToken(token);
       }
 
       router.push('/dashboard');
