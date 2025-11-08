@@ -1,5 +1,5 @@
 import React from "react";
-import type { Course } from "../../hooks/use-course";
+import type { Course } from "@/domain/entities/course";
 import type { Node } from "reactflow";
 import { useTranslation } from "react-i18next";
 

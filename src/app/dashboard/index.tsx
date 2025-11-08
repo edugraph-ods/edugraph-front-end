@@ -3,14 +3,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { FiChevronDown, FiUser, FiLogOut, FiChevronUp } from "react-icons/fi";
-import { useRouter } from "next/navigation";
-import { CourseStatus, Course } from "@/hooks/use-course";
+import Image from "next/image";
+import type { Course, CourseStatus } from "@/domain/entities/course";
 import { useDashboard } from "@/hooks/useDashboard";
-import { useGraphApi } from "@/hooks/use-graph";
+import { useGraph } from "@/presentation/hooks/useGraph";
+import type { PlanResult } from "@/domain/entities/graph";
 import { ThemeToggle } from "@/components/theme-provider";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslation } from 'react-i18next';
-import { getToken } from "@/lib/api-client";
+import { readAuthToken } from "@/shared/utils/authToken";
 
 interface DecodedTokenPayload {
   full_name?: string;
@@ -34,7 +35,7 @@ const decodePayload = <T,>(token: string): T | null => {
 };
 
 const getUserInfo = (): DecodedTokenPayload | null => {
-  const token = getToken();
+  const token = readAuthToken();
   if (!token) return null;
   return decodePayload<DecodedTokenPayload>(token);
 };
@@ -44,10 +45,9 @@ const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph")
 });
 
 export default function Dashboard() {
-  const router = useRouter();
   const { t } = useTranslation('dashboard');
-  const { ingest, getCourses, detectCycles, plan } = useGraphApi();
-  const [planResult, setPlanResult] = useState<{ total_cycles: number; cycles: { cycle: number; total_credits: number; courses: string[] }[] } | null>(null);
+  const { ingest, getCourses, detectCycles, generatePlan } = useGraph();
+  const [planResult, setPlanResult] = useState<PlanResult | null>(null);
   const [planError, setPlanError] = useState<string>("");
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -58,15 +58,11 @@ export default function Dashboard() {
     selectedCareer,
     selectedCourseId,
     expandedCycles,
-    filteredCourses,
     handleCareerChange,
-    handleClearFilters,
     handleLogout,
     toggleCycle,
-    handleSelectCycle,
     updateCourseStatus,
     handleCourseSelect,
-    toggleCourseStatus,
     CAREERS,
     cycles,
     courses,
@@ -94,37 +90,19 @@ export default function Dashboard() {
   const handleConfirmSelection = useCallback(async () => {
     try {
       setPlanError("");
-      if (typeof creditLimit !== "number" || creditLimit <= 0) {
-        setPlanError("Ingrese un límite de créditos válido");
-        return;
-      }
-      const approved = courses.filter((c: Course) => c.status === "approved").map((c: Course) => c.id);
-      const failures = courses.reduce((acc: Record<number, string[]>, c: Course) => {
-        if (c.status === "failed") {
-          const k = c.cycle;
-          acc[k] = acc[k] ? [...acc[k], c.id] : [c.id];
-        }
-        return acc;
-      }, {} as Record<number, string[]>);
-      const target = plannedCourseIds.length ? plannedCourseIds : undefined;
-      const payload: any = {
-        max_credits: creditLimit as number,
-        approved,
-        target_codes: target,
-        failures: Object.keys(failures).length ? failures : undefined,
-      };
-      if (selectedAlgorithm) {
-        payload.algorithm = selectedAlgorithm;
-      }
-      console.debug("plan payload", payload);
-      const result = await plan(payload);
+      const result = await generatePlan({
+        courses,
+        plannedCourseIds,
+        creditLimit,
+        algorithm: selectedAlgorithm || undefined,
+      });
       console.debug("plan result", result);
       setPlanResult(result);
     } catch (e) {
       console.error("plan error", e);
       setPlanError(e instanceof Error ? e.message : "Unexpected error");
     }
-  }, [courses, plannedCourseIds, creditLimit, plan, selectedAlgorithm]);
+  }, [courses, plannedCourseIds, creditLimit, generatePlan, selectedAlgorithm]);
 
   useEffect(() => {
     const run = async () => {
@@ -133,16 +111,16 @@ export default function Dashboard() {
         console.log("ingest response", ingested?.length ?? 0);
         const coursesResp = await getCourses();
         console.log("courses response", coursesResp?.length ?? 0);
-        const mapped: Course[] = (coursesResp || []).map((c) => ({
-          id: c.code,
-          name: c.name,
-          credits: c.credits,
-          cycle: c.cycle,
-          prerequisites: c.prerequisites || [],
+        const mapped: Course[] = (coursesResp || []).map((course) => ({
+          id: course.code,
+          name: course.name,
+          credits: course.credits,
+          cycle: course.cycle,
+          prerequisites: course.prerequisites || [],
           status: "not_taken",
-          career: c.career || undefined,
-          university: c.university || undefined,
-          program: c.program || undefined,
+          career: course.career || undefined,
+          university: course.university || undefined,
+          program: course.program || undefined,
         }));
         setCoursesList(mapped);
         const cyclesResp = await detectCycles();
@@ -188,10 +166,13 @@ export default function Dashboard() {
       {/* Header */}
       <header className="flex items-center justify-between p-4 bg-card shadow-sm border-b border-border">
         <div className="flex items-center space-x-4">
-          <img
+          <Image
             src="/logo.jpg"
             alt="EduGraph Logo"
+            width={32}
+            height={32}
             className="h-8 w-8 rounded-full border border-border"
+            priority
           />
           <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
         </div>

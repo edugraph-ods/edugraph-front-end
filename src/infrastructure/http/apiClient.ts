@@ -1,3 +1,5 @@
+import { readAuthToken } from "@/shared/utils/authToken";
+
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
 const resolveApiBase = () => {
@@ -15,17 +17,6 @@ const API_BASE_URL = resolveApiBase();
 const buildUrl = (path: string) => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${API_BASE_URL}${normalizedPath}`;
-};
-
-export const getToken = (): string | null => {
-  if (typeof document === "undefined") return null;
-  const parts = document.cookie.split(";").map((c) => c.trim());
-  for (const part of parts) {
-    if (part.startsWith("auth-token=")) {
-      return decodeURIComponent(part.substring("auth-token=".length));
-    }
-  }
-  return null;
 };
 
 const parseErrorMessage = async (response: Response) => {
@@ -58,16 +49,15 @@ const parseErrorMessage = async (response: Response) => {
   return "Unexpected error";
 };
 
-type JsonInit = {
+export type JsonInit = {
   method?: string;
   body?: unknown;
   headers?: Record<string, string>;
 };
 
 export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
-  const token = getToken();
+  const token = readAuthToken();
   const url = buildUrl(path);
-  // simple tracing
   console.debug("GET", url);
   const response = await fetch(buildUrl(path), {
     method: init?.method ?? "GET",
@@ -89,12 +79,42 @@ export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
   return {} as T;
 };
 
+export const requestJson = async <T>(
+  path: string,
+  body: unknown,
+  init?: JsonInit
+): Promise<T> => {
+  const token = readAuthToken();
+  const url = buildUrl(path);
+  console.debug("REQUEST", url, body);
+  const response = await fetch(url, {
+    method: init?.method ?? "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
+    body: JSON.stringify(body ?? {}),
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response));
+  }
+  if (response.status === 204) return {} as T;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T;
+  }
+  return {} as T;
+};
+
 export const postJson = async <T>(
   path: string,
   body: unknown,
   init?: JsonInit
 ): Promise<T> => {
-  const token = getToken();
+  const token = readAuthToken();
   const url = buildUrl(path);
   console.debug("POST", url, body);
   const response = await fetch(url, {

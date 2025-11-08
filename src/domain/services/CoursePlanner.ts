@@ -1,4 +1,4 @@
-import { Course } from "../hooks/use-course";
+import type { Course } from "@/domain/entities/course";
 
 export class SchedulingError extends Error {
   constructor(message: string, public code: string) {
@@ -7,25 +7,54 @@ export class SchedulingError extends Error {
   }
 }
 
-type CourseState = {
+export type CourseState = {
   approved: number;
   failed: number;
   currentCycle: number;
 };
 
-type ScheduleStep = {
+export type ScheduleStep = {
   cycle: number;
   courses: string[];
   credits: number;
   statuses: { [key: string]: "approved" | "failed" };
 };
 
-type ScheduleResult = {
+export type ScheduleResult = {
   cycles: number;
   schedule: ScheduleStep[];
 };
 
-export class OptimizedCourseScheduler {
+export interface CoursePlannerOptions {
+  maxCreditsPerCycle?: number;
+}
+
+const DEFAULT_MAX_CREDITS_PER_CYCLE = 7;
+
+const extractPrerequisiteId = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : null;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const keys: Array<"code" | "id" | "name"> = ["code", "id", "name"];
+    for (const key of keys) {
+      const field = record[key];
+      if (typeof field === "string") {
+        const trimmed = field.trim();
+        if (trimmed.length) {
+          return trimmed;
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+export class CoursePlanner {
   private courses: Map<string, Course>;
   private courseIds: string[];
   private courseIndices: Map<string, number>;
@@ -36,7 +65,7 @@ export class OptimizedCourseScheduler {
   private combinationCache: Map<string, string[][]>;
   private criticalPath: string[] = [];
 
-  constructor(courses: Course[], maxCreditsPerCycle: number) {
+  constructor(courses: Course[], options?: CoursePlannerOptions) {
     if (!Array.isArray(courses)) {
       throw new Error("Courses must be an array");
     }
@@ -55,10 +84,10 @@ export class OptimizedCourseScheduler {
     });
 
     if (validCourses.length === 0 && courses.length > 0) {
-      console.error("No valid courses provided to OptimizedCourseScheduler");
+      console.error("No valid courses provided to CoursePlanner");
     }
 
-    this.courses = new Map(validCourses.map((c) => [c.id, c]));
+    this.courses = new Map(validCourses.map((c) => [c.id, { ...c }]));
     this.courseIds = validCourses.map((c) => c.id);
     this.courseIndices = new Map(validCourses.map((c, i) => [c.id, i]));
 
@@ -71,19 +100,10 @@ export class OptimizedCourseScheduler {
         : [];
 
       rawPrereqs.forEach((raw) => {
-        let prereqId = "";
-        if (typeof raw === "string") {
-          prereqId = raw.trim();
-        } else if (raw && typeof raw === "object") {
-          if ("code" in raw && typeof (raw as any).code === "string") {
-            prereqId = (raw as any).code.trim();
-          } else if ("id" in raw && typeof (raw as any).id === "string") {
-            prereqId = (raw as any).id.trim();
-          } else if ("name" in raw && typeof (raw as any).name === "string") {
-            prereqId = (raw as any).name.trim();
-          }
+        const prereqId = extractPrerequisiteId(raw);
+        if (!prereqId) {
+          return;
         }
-        if (!prereqId) return;
 
         const normalized = prereqId.toLowerCase();
         const canonicalId = this.courseIds.find(
@@ -113,7 +133,7 @@ export class OptimizedCourseScheduler {
     });
 
     this.prerequisites = sanitizedPrereqs;
-    this.maxCreditsPerCycle = maxCreditsPerCycle;
+    this.maxCreditsPerCycle = options?.maxCreditsPerCycle ?? DEFAULT_MAX_CREDITS_PER_CYCLE;
     this.memo = new Map();
     this.combinationCache = new Map();
 
@@ -121,10 +141,93 @@ export class OptimizedCourseScheduler {
       this.topologicalOrder = this.calculateTopologicalOrder();
       this.calculateCriticalPath();
     } catch (error) {
-      console.error("Error initializing course scheduler:", error);
+      console.error("Error initializing course planner:", error);
       this.topologicalOrder = [];
       this.criticalPath = [];
     }
+  }
+
+  public getCourses(): Course[] {
+    return Array.from(this.courses.values()).map((course) => ({ ...course }));
+  }
+
+  public getCriticalPath(): string[] {
+    return [...this.criticalPath];
+  }
+
+  public calculateOptimalSchedule(): ScheduleResult {
+    const initialState: CourseState = {
+      approved: 0,
+      failed: 0,
+      currentCycle: 1,
+    };
+
+    return this.dp(initialState);
+  }
+
+  public getOptimalSchedule(): ScheduleResult {
+    try {
+      const initialState: CourseState = {
+        approved: 0,
+        failed: 0,
+        currentCycle: 1,
+      };
+
+      const result = this.dp(initialState);
+
+      if (result.cycles === Infinity) {
+        throw new SchedulingError(
+          "No se pudo encontrar un horario válido con los parámetros dados.",
+          "NO_VALID_SCHEDULE"
+        );
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new SchedulingError(
+          `Error al calcular el horario: ${error.message}`,
+          "SCHEDULING_ERROR"
+        );
+      }
+      throw error;
+    }
+  }
+
+  public updateCourseStatus(
+    courseId: string,
+    status: "approved" | "failed" | "not_taken"
+  ): void {
+    const course = this.courses.get(courseId);
+    if (!course) {
+      throw new SchedulingError(
+        `Curso no encontrado: ${courseId}`,
+        "COURSE_NOT_FOUND"
+      );
+    }
+
+    if (course.status === status) return;
+
+    if (status === "approved") {
+      const missingPrereqs = (course.prerequisites || []).filter(
+        (prereqId) => this.courses.get(prereqId)?.status !== "approved"
+      );
+
+      if (missingPrereqs.length > 0) {
+        throw new SchedulingError(
+          `No se puede aprobar ${courseId} sin completar los prerrequisitos: ${missingPrereqs.join(
+            ", "
+          )}`,
+          "MISSING_PREREQUISITES"
+        );
+      }
+    }
+
+    course.status = status;
+    this.memo.clear();
+    this.combinationCache.clear();
+    this.topologicalOrder = this.calculateTopologicalOrder();
+    this.calculateCriticalPath();
   }
 
   private calculateTopologicalOrder(): string[] {
@@ -341,6 +444,7 @@ export class OptimizedCourseScheduler {
       );
     });
   }
+
   private generateValidCombinations(availableCourses: string[]): string[][] {
     const key = [...availableCourses].sort().join(",");
 
@@ -395,74 +499,6 @@ export class OptimizedCourseScheduler {
 
     this.combinationCache.set(key, combinations);
     return combinations;
-  }
-  public getOptimalSchedule(): ScheduleResult {
-    try {
-      const initialState: CourseState = {
-        approved: 0,
-        failed: 0,
-        currentCycle: 1,
-      };
-
-      const result = this.dp(initialState);
-
-      if (result.cycles === Infinity) {
-        throw new SchedulingError(
-          "No se pudo encontrar un horario válido con los parámetros dados.",
-          "NO_VALID_SCHEDULE"
-        );
-      }
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new SchedulingError(
-          `Error al calcular el horario: ${error.message}`,
-          "SCHEDULING_ERROR"
-        );
-      }
-      throw error;
-    }
-  }
-
-  public getCriticalPath(): string[] {
-    return [...this.criticalPath];
-  }
-
-  public updateCourseStatus(
-    courseId: string,
-    status: "approved" | "failed" | "not_taken"
-  ): void {
-    const course = this.courses.get(courseId);
-    if (!course) {
-      throw new SchedulingError(
-        `Curso no encontrado: ${courseId}`,
-        "COURSE_NOT_FOUND"
-      );
-    }
-
-    if (course.status === status) return;
-
-    if (status === "approved") {
-      const missingPrereqs = (course.prerequisites || []).filter(
-        (prereqId) => this.courses.get(prereqId)?.status !== "approved"
-      );
-
-      if (missingPrereqs.length > 0) {
-        throw new SchedulingError(
-          `No se puede aprobar ${courseId} sin completar los prerrequisitos: ${missingPrereqs.join(
-            ", "
-          )}`,
-          "MISSING_PREREQUISITES"
-        );
-      }
-    }
-
-    course.status = status;
-    this.memo.clear();
-    this.combinationCache.clear();
-    this.topologicalOrder = this.calculateTopologicalOrder();
-    this.calculateCriticalPath();
   }
 
   private dp(state: CourseState): ScheduleResult {
@@ -583,15 +619,5 @@ export class OptimizedCourseScheduler {
     const finalResult = { cycles: minCycles, schedule: bestSchedule };
     this.memo.set(key, finalResult);
     return finalResult;
-  }
-
-  public calculateOptimalSchedule(): ScheduleResult {
-    const initialState: CourseState = {
-      approved: 0,
-      failed: 0,
-      currentCycle: 1,
-    };
-
-    return this.dp(initialState);
   }
 }

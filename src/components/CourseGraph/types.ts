@@ -1,5 +1,5 @@
-import { Course } from "../../hooks/use-course";
-import React from "react";
+import type { Course } from "@/domain/entities/course";
+import type { PlanResult } from "@/domain/entities/graph";
 
 export type CourseStatus = "not_taken" | "approved" | "failed";
 
@@ -10,10 +10,5 @@ export interface CourseGraphProps {
   selectedCourseId?: string | null;
   onStatusChange: (courseId: string, newStatus: CourseStatus) => void;
   onCourseSelect?: (courseId: string) => void;
-  planResult?: {
-    total_cycles: number;
-    cycles: { cycle: number; total_credits: number; courses: string[] }[];
-  } | null;
+  planResult?: PlanResult | null;
 }
-
-export type NodeData = any;

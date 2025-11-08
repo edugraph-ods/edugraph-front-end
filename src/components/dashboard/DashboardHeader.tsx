@@ -1,5 +1,5 @@
+import Image from 'next/image';
 import { FiUser, FiLogOut } from 'react-icons/fi';
-import { useRouter } from 'next/navigation';
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -9,7 +9,13 @@ export const DashboardHeader = ({ onLogout }: DashboardHeaderProps) => {
   return (
     <header className="flex items-center justify-between p-4 bg-white shadow-sm">
       <div className="flex items-center space-x-2">
-        <img src="/logo.jpg" alt="EduGraph Logo" className="h-8 w-8 rounded-full" />
+        <Image
+          src="/logo.jpg"
+          alt="EduGraph Logo"
+          width={32}
+          height={32}
+          className="rounded-full"
+        />
         <h1 className="text-xl font-bold">EduGraph</h1>
       </div>
       

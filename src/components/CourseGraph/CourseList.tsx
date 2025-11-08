@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
-import type { CourseStatus } from "./types";
-import type { Course } from "../../hooks/use-course";
 import type { Node } from "reactflow";
 import { useTranslation } from "react-i18next";
+import type { Course } from "@/domain/entities/course";
+import type { PlanResult } from "@/domain/entities/graph";
+import type { CourseNodeData } from "../../hooks/useCourseGraph";
+import type { CourseStatus } from "./types";
 
 interface CourseListProps {
-  nodes: Node[];
+  nodes: Node<CourseNodeData>[];
   courses: Course[];
   scheduleCourses: Course[];
   selectedCycle?: number | null;
@@ -15,10 +17,15 @@ interface CourseListProps {
   getCurrentStatus: (courseId: string) => CourseStatus;
   getStatusColor: (status: CourseStatus) => string;
   setDetailCourseId: (id: string | null) => void;
-  planResult?: {
-    total_cycles: number;
-    cycles: { cycle: number; total_credits: number; courses: any[] }[];
-  } | null;
+  planResult?: PlanResult | null;
+}
+
+interface DisplayCourseItem {
+  id: string;
+  cycle: number;
+  label: string;
+  credits: number;
+  prereqs: string[];
 }
 
 export const CourseList: React.FC<CourseListProps> = ({
@@ -37,7 +44,7 @@ export const CourseList: React.FC<CourseListProps> = ({
   const { t } = useTranslation("dashboard");
 
   const nodeMap = useMemo(
-    () => new Map(nodes.map((n) => [n.id, n] as const)),
+    () => new Map(nodes.map((node) => [node.id, node] as const)),
     [nodes]
   );
   const creditLabel = (n: number) =>
@@ -46,7 +53,6 @@ export const CourseList: React.FC<CourseListProps> = ({
     }`;
 
   if (planResult) {
-    const result = planResult;
     return (
       <div className="h-full flex flex-col">
         <div className="space-y-2">
@@ -54,50 +60,49 @@ export const CourseList: React.FC<CourseListProps> = ({
             {t("detail.title")}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {t("detail.credits")}: {result.total_cycles}
+            {t("detail.credits")}: {planResult.totalCycles}
           </p>
         </div>
         <div className="flex-1 min-h-0 overflow-auto space-y-4">
-          {result.cycles.map((cyc) => {
-            const items = (cyc.courses || []).map((entry: any) => {
-              const courseCode: string =
-                typeof entry === "string" ? entry : entry?.code ?? "";
-              const n = nodeMap.get(courseCode);
-              const c =
-                scheduleCourses.find((sc) => sc.id === courseCode) ||
-                courses.find((sc) => sc.id === courseCode);
-              const labelFromEntry =
-                typeof entry === "object" && entry?.name
-                  ? entry.name
-                  : undefined;
-              const creditsFromEntry =
-                typeof entry === "object" && typeof entry?.credits === "number"
-                  ? entry.credits
-                  : undefined;
-              return {
-                id: courseCode,
-                cycle: cyc.cycle,
-                label: n?.data.label ?? c?.name ?? labelFromEntry ?? courseCode,
-                credits:
-                  typeof c?.credits === "number"
-                    ? (c as any).credits
-                    : creditsFromEntry ?? 0,
-                prereqs: (
-                  n?.data?.prerequisites ??
-                  c?.prerequisites ??
-                  []
-                ).filter(
-                  (p: string) =>
-                    p &&
-                    (nodeMap.has(p) ||
-                      scheduleCourses.some((sc) => sc.id === p))
-                ),
-              };
-            });
+          {planResult.cycles.map((cyclePlan) => {
+            const items: DisplayCourseItem[] = cyclePlan.courses
+              .map((courseCode) => {
+                if (typeof courseCode !== "string") {
+                  return null;
+                }
+
+                const node = nodeMap.get(courseCode);
+                const matchedCourse =
+                  scheduleCourses.find((sc) => sc.id === courseCode) ||
+                  courses.find((sc) => sc.id === courseCode);
+
+                if (!node && !matchedCourse) {
+                  return null;
+                }
+
+                const label = node?.data.label ?? matchedCourse?.name ?? courseCode;
+                const credits = matchedCourse?.credits ?? 0;
+                const prereqSource =
+                  node?.data.prerequisites ?? matchedCourse?.prerequisites ?? [];
+                const prereqs = prereqSource.filter((prereqId): prereqId is string =>
+                  typeof prereqId === "string" &&
+                  (nodeMap.has(prereqId) ||
+                    scheduleCourses.some((course) => course.id === prereqId))
+                );
+
+                return {
+                  id: courseCode,
+                  cycle: cyclePlan.cycle,
+                  label,
+                  credits,
+                  prereqs,
+                } satisfies DisplayCourseItem;
+              })
+              .filter((item): item is DisplayCourseItem => Boolean(item));
             return (
-              <div key={`plan-cyc-${cyc.cycle}`} className="space-y-2">
+              <div key={`plan-cyc-${cyclePlan.cycle}`} className="space-y-2">
                 <h4 className="text-md font-medium text-foreground/80">
-                  {t("detail.cycle")} {cyc.cycle}
+                  {t("detail.cycle")} {cyclePlan.cycle}
                 </h4>
                 {items.length > 0 ? (
                   <div
@@ -225,14 +230,17 @@ export const CourseList: React.FC<CourseListProps> = ({
       label: n?.data.label ?? c.name,
       credits: typeof c.credits === "number" ? c.credits : 0,
       prereqs: Array.from(new Set(prereqSource)),
-    };
+    } satisfies DisplayCourseItem;
   });
 
-  const grouped = items.reduce<Record<number, any[]>>((acc, item) => {
-    if (!acc[item.cycle]) acc[item.cycle] = [];
+  const grouped = items.reduce<Record<number, DisplayCourseItem[]>>(
+    (acc, item) => {
+      if (!acc[item.cycle]) acc[item.cycle] = [];
     acc[item.cycle].push(item);
     return acc;
-  }, {});
+    },
+    {}
+  );
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium text-foreground">
