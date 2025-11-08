@@ -39,7 +39,7 @@ const getUserInfo = (): DecodedTokenPayload | null => {
   return decodePayload<DecodedTokenPayload>(token);
 };
 
-const CourseGraph = dynamic(() => import("@/components/CourseGraph"), {
+const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph"), {
   ssr: false,
 });
 
