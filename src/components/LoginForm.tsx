@@ -141,6 +141,7 @@ export const LoginForm = () => {
             <button
               type="button"
               className="text-sm sm:text-base font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 cursor-pointer"
+              onClick={() => router.push('/auth/recovery-password')}
             >
               {t('forgotPassword')}
             </button>

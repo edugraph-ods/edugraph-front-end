@@ -58,7 +58,7 @@
     "filters": {
       "title": "Filters",
       "career": "Career",
-      "credits":"Credits",
+      "credits": "Credits",
       "careerPlaceholder": "Available Careers",
       "loading": "Academic Load",
       "total": "Total Credits",
@@ -74,10 +74,14 @@
         "cycle": "Cycle",
         "button": "View Details",
         "selector": {
-          "faild": "Select a Cycle",
+          "faild": "NR",
           "approved": "Approved",
           "reprobated": "Failed"
         }
+      },
+      "advanced": {
+        "title": "Advanced settings",
+        "description": "Available algorithms"
       }
     },
     "detail": {
@@ -108,9 +112,40 @@
       "isInCriticalPath": "Critical Path",
       "prerequisites": "Prerequisites",
       "not_required": "No prerequisites required",
-      "release": "Will release",
+      "release": "Opening",
       "nothing": "Does not unlock additional courses",
       "close": "Close"
+    },
+    "button": {
+      "export": "Export PDF",
+      "load": "Load data",
+      "delete": "Delete",
+      "save": "Save",
+      "show": "Show",
+      "hide": "Hide"
     }
+  },
+  "recoveryPassword": {
+    "title": "Account Recovery",
+    "description": "Having trouble logging in?",
+    "subtitle": "Enter the email associated with your account and we'll send you a recovery code.",
+    "subtitlepassword": "Enter the code you received and create a new, secure password.",
+    "email": "Need more help? Email us at",
+    "emaillabel": "Email address",
+    "support":"soporte@edugraph.com",
+    "emailPlaceholder": "email@example.com",
+    "code": "Recovery Code",
+    "codePlaceholder": "Recovery Code",
+    "password": "New Password",
+    "passwordPlaceholder": "New Password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "submit": "Submit Code",
+    "button": "Update Password",
+    "backbutton": "Back to Code Request",
+    "backToHome": "Back to Home of session",
+    "span": "We sent you a temporary code to your email. Review it and enter it below.",
+    "alert": "Passwords do not match. Please try again.",
+    "confirm": "Your password was successfully updated. You can now log in."
   }
 }

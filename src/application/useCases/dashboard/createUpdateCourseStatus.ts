@@ -31,9 +31,12 @@ export const createUpdateCourseStatus = () => {
     try {
       const planner = new CoursePlanner(courses, plannerOptions);
       planner.updateCourseStatus(courseId, status);
+      const planned = planner.getCourses();
+      const statusById = new Map(planned.map((c) => [c.id, c.status] as const));
+      const merged = courses.map((c) => ({ ...c, status: statusById.get(c.id) ?? c.status }));
 
       return {
-        courses: planner.getCourses(),
+        courses: merged,
         criticalPath: planner.getCriticalPath(),
       } satisfies UpdateCourseStatusResult;
     } catch (error) {

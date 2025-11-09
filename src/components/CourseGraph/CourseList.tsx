@@ -76,12 +76,8 @@ export const CourseList: React.FC<CourseListProps> = ({
                   scheduleCourses.find((sc) => sc.id === courseCode) ||
                   courses.find((sc) => sc.id === courseCode);
 
-                if (!node && !matchedCourse) {
-                  return null;
-                }
-
                 const label = node?.data.label ?? matchedCourse?.name ?? courseCode;
-                const credits = matchedCourse?.credits ?? 0;
+                const credits = typeof matchedCourse?.credits === 'number' ? matchedCourse!.credits : 0;
                 const prereqSource =
                   node?.data.prerequisites ?? matchedCourse?.prerequisites ?? [];
                 const prereqs = prereqSource.filter((prereqId): prereqId is string =>
