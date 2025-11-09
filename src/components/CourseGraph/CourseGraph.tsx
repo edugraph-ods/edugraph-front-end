@@ -86,6 +86,8 @@ const CourseGraph: FC<CourseGraphProps> = ({
   useEffect(() => setMounted(true), []);
   const themeMode = resolvedTheme ?? "light";
 
+  // No auto-centering; we avoid fitView to keep user's position.
+
   const miniMapNodeColor = (node: Node<CourseNodeData>) => {
     const data = node.data;
     const status = data?.status;
@@ -128,181 +130,15 @@ const CourseGraph: FC<CourseGraphProps> = ({
   }
 
   const hasPlan = !!planResult;
-  if (planResult) {
-    return (
-      <div className="h-full flex flex-col">
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium text-foreground">
-            {t("detail.title")}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {t("detail.credits")}: {planResult.totalCycles}
-          </p>
-        </div>
-        <div className="flex-1 min-h-0 overflow-auto space-y-4">
-          {planResult.cycles.map((cyclePlan) => {
-            const items = cyclePlan.courses
-              .map((courseCode) => {
-                if (typeof courseCode !== "string") {
-                  return null;
-                }
-
-                const node = nodeMap.get(courseCode);
-                const matchedCourse =
-                  scheduleCourses.find((sc) => sc.id === courseCode) ||
-                  courses.find((sc) => sc.id === courseCode);
-                const label = node?.data.label ?? matchedCourse?.name ?? courseCode;
-                const credits = typeof matchedCourse?.credits === 'number' ? matchedCourse!.credits : 0;
-                const prereqSource =
-                  node?.data.prerequisites ?? matchedCourse?.prerequisites ?? [];
-                const prereqs = prereqSource.filter(
-                  (prereqId): prereqId is string =>
-                    typeof prereqId === "string" &&
-                    (nodeMap.has(prereqId) ||
-                      scheduleCourses.some((course) => course.id === prereqId))
-                );
-
-                return {
-                  id: courseCode,
-                  cycle: cyclePlan.cycle,
-                  label,
-                  credits,
-                  prereqs,
-                };
-              })
-              .filter((item): item is {
-                id: string;
-                cycle: number;
-                label: string;
-                credits: number;
-                prereqs: string[];
-              } => Boolean(item));
-
-            return (
-              <div key={`plan-cyc-${cyclePlan.cycle}`} className="space-y-2">
-                <h4 className="text-md font-medium text-foreground/80">
-                  {t("detail.cycle")} {cyclePlan.cycle}
-                </h4>
-                {items.length > 0 ? (
-                  <div
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 items-stretch"
-                    style={{ gridAutoRows: "minmax(180px, auto)" }}
-                  >
-                    {items.map((item) => (
-                      <div
-                        key={`${item.id}-${cyclePlan.cycle}`}
-                        className={`p-4 rounded-lg border ${
-                          selectedCourseId === item.id
-                            ? "border-primary bg-accent/50 ring-2 ring-primary/30 dark:ring-primary/20"
-                            : selectedCycle === item.cycle
-                            ? "border-primary/30 bg-accent/20 dark:bg-primary/10"
-                            : "border-border bg-card hover:bg-accent/30"
-                        } transition-all cursor-pointer`}
-                        onClick={() => onCourseSelect?.(item.id)}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h5 className="font-medium text-foreground">
-                              {item.label}
-                            </h5>
-                            <p className="text-sm text-muted-foreground">
-                              {`${item.credits} ${
-                                item.credits === 1
-                                  ? t("filters.detail.credit")
-                                  : t("filters.detail.credits")
-                              }`}
-                            </p>
-                          </div>
-                          <div className="relative">
-                            <select
-                              value={getCurrentStatus(item.id)}
-                              onChange={(e) =>
-                                onStatusChange(
-                                  item.id,
-                                  e.target.value as CourseStatus
-                                )
-                              }
-                              onClick={(e) => e.stopPropagation()}
-                              className={`px-3 py-1 rounded-full text-xs font-medium text-center min-w-[110px] cursor-pointer appearance-none ${getStatusColor(
-                                getCurrentStatus(item.id)
-                              )} hover:opacity-90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring`}
-                            >
-                              <option value="not_taken">
-                                {t("filters.detail.selector.faild")}
-                              </option>
-                              <option value="approved">
-                                {t("filters.detail.selector.approved")}
-                              </option>
-                              <option value="failed">
-                                {t("filters.detail.selector.reprobated")}
-                              </option>
-                            </select>
-                            {selectedCourseId === item.id && (
-                              <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary animate-ping"></div>
-                            )}
-                          </div>
-                        </div>
-                        {item.prereqs.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-border">
-                            <p className="text-xs text-muted-foreground mb-1">
-                              {t("filters.required")}
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {item.prereqs.map((prereqId) => (
-                                <span
-                                  key={prereqId}
-                                  className="inline-block text-xs px-2 py-0.5 bg-accent text-accent-foreground rounded-full cursor-pointer hover:bg-accent/80 transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onCourseSelect?.(prereqId);
-                                  }}
-                                >
-                                  {nodeMap.get(prereqId)?.data.label ??
-                                    scheduleCourses.find(
-                                      (course) => course.id === prereqId
-                                    )?.name ??
-                                    prereqId}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <div className="mt-3 flex justify-end">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDetailCourseId(item.id);
-                            }}
-                            className="px-3 py-1.5 text-xs font-medium text-primary border border-input hover:bg-accent rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                          >
-                            {t("filters.detail.button")}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground">
-                    {t("detail.nothing")}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
-      className="h-full w-full flex flex-col"
-      style={{ height: "calc(100vh - 120px)", minHeight: 0 }}
+      className="w-full flex flex-col"
+      style={{ minHeight: "calc(100vh - 120px)" }}
     >
       <div
-        className={`relative ${hasPlan ? "hidden" : "flex-1"}`}
-        style={{ minHeight: 0 }}
+        className="relative flex-1"
+        style={{ minHeight: 360, height: "100%", width: "100%" }}
       >
         {selectedCourseId ? (
           <ReactFlow
@@ -312,7 +148,6 @@ const CourseGraph: FC<CourseGraphProps> = ({
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             nodeTypes={nodeTypes}
-            fitView
             nodesDraggable
             nodesConnectable={false}
             elementsSelectable
@@ -325,6 +160,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                 strokeWidth: 2,
               },
             }}
+            style={{ width: "100%", height: "100%" }}
           >
             <Background gap={12} />
             <Controls />
@@ -346,7 +182,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
             </Panel>
           </ReactFlow>
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
             {t("graph.description")}
           </div>
         )}
@@ -354,8 +190,8 @@ const CourseGraph: FC<CourseGraphProps> = ({
       <div
         className={`${
           hasPlan ? "" : "border-t border-border"
-        } p-4 bg-card shadow-inner flex-1`}
-        style={{ minHeight: 0, overflowY: "auto" }}
+        } p-4 bg-card shadow-inner`}
+        style={{ overflowY: "visible" }}
       >
         <CourseList
           nodes={nodes}

@@ -533,8 +533,8 @@ export default function Dashboard() {
           </div>
 
           {/* Graph */}
-        <div className="lg:col-span-3 bg-card rounded-xl p-6 shadow-sm border border-border" style={{ height: 'calc(100vh - 120px)', minHeight: 0 }}>
-          <div className="h-full flex flex-col" style={{ minHeight: 0 }}>
+        <div className="lg:col-span-3 bg-card rounded-xl p-6 shadow-sm border border-border" style={{ minHeight: 'calc(100vh - 120px)' }}>
+          <div className="flex flex-col" style={{ minHeight: 0 }}>
             <CourseGraph
               courses={courses}
               displayCourses={coursesByCareer}
