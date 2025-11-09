@@ -40,11 +40,6 @@ const CourseGraph: FC<CourseGraphProps> = ({
   const { nodes, edges, onNodesChange, onEdgesChange, setEdges, isLoading } =
     useCourseGraph(scheduleCourses);
 
-  const nodeMap = useMemo(
-    () => new Map(nodes.map((node) => [node.id, node] as const)),
-    [nodes]
-  );
-
   const getCurrentStatus = useCallback(
     (courseId: string): CourseStatus => {
       const node = nodes.find((n) => n.id === courseId);
@@ -132,14 +127,8 @@ const CourseGraph: FC<CourseGraphProps> = ({
   const hasPlan = !!planResult;
 
   return (
-    <div
-      className="w-full flex flex-col"
-      style={{ minHeight: "calc(100vh - 120px)" }}
-    >
-      <div
-        className="relative flex-1"
-        style={{ minHeight: 360, height: "100%", width: "100%" }}
-      >
+    <div className="flex flex-col flex-1 min-h-0 w-full" style={{ minHeight: "calc(100vh - 120px)" }}>
+      <div className="relative flex-1 min-h-[360px] w-full">
         {selectedCourseId ? (
           <ReactFlow
             nodes={nodes}
@@ -160,7 +149,7 @@ const CourseGraph: FC<CourseGraphProps> = ({
                 strokeWidth: 2,
               },
             }}
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: "100%", height: "100%", minHeight: "480px" }}
           >
             <Background gap={12} />
             <Controls />

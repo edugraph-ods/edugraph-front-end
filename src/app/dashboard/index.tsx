@@ -2,43 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { FiChevronDown, FiUser, FiLogOut, FiChevronUp } from "react-icons/fi";
-import Image from "next/image";
+import { FiChevronDown, FiChevronUp, FiSave, FiTrash2 } from "react-icons/fi";
 import type { Course, CourseStatus } from "@/domain/entities/course";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useGraph } from "@/presentation/hooks/useGraph";
 import type { PlanResult } from "@/domain/entities/graph";
-import { ThemeToggle } from "@/components/theme-provider";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslation } from 'react-i18next';
-import { readAuthToken } from "@/shared/utils/authToken";
-
-interface DecodedTokenPayload {
-  full_name?: string;
-  name?: string;
-  email?: string;
-  [key: string]: unknown;
-}
-
-const decodePayload = <T,>(token: string): T | null => {
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = typeof window === "undefined"
-      ? Buffer.from(payload, "base64").toString("utf-8")
-      : atob(payload);
-    return JSON.parse(decoded) as T;
-  } catch {
-    return null;
-  }
-};
-
-const getUserInfo = (): DecodedTokenPayload | null => {
-  const token = readAuthToken();
-  if (!token) return null;
-  return decodePayload<DecodedTokenPayload>(token);
-};
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph"), {
   ssr: false,
@@ -52,7 +22,6 @@ export default function Dashboard() {
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("");
-  const [headerLogoFailed, setHeaderLogoFailed] = useState(false);
 
   const algorithmOptions = useMemo(
     () => [
@@ -120,6 +89,7 @@ export default function Dashboard() {
     toggleCycle,
     updateCourseStatus,
     handleCourseSelect,
+    handleClearFilters,
     CAREERS,
     cycles,
     courses,
@@ -162,6 +132,11 @@ export default function Dashboard() {
     }
   }, [courses, plannedCourseIds, creditLimit, generatePlan, selectedAlgorithm]);
 
+  const handleResetDashboard = useCallback(() => {
+    handleClearFilters();
+    setPlanResult(null);
+  }, [handleClearFilters]);
+
   useEffect(() => {
     const run = async () => {
       try {
@@ -190,85 +165,10 @@ export default function Dashboard() {
     run();
   }, [ingest, getCourses, detectCycles, setCoursesList]);
 
-  const [userInfo, setUserInfo] = useState<DecodedTokenPayload | null>(null);
-
-  useEffect(() => {
-    setUserInfo(getUserInfo());
-  }, []);
-
-  const tooltipContent = useMemo(() => {
-    if (!userInfo) {
-      return (
-        <div className="px-4 py-3 text-sm text-muted-foreground">
-          {t("header.noUser", { defaultValue: "Sesión no identificada." })}
-        </div>
-      );
-    }
-
-    const { full_name, name, email } = userInfo;
-
-    return (
-      <div className="px-4 py-3 w-56">
-        <p className="text-sm font-semibold text-foreground">
-          {full_name ?? name ?? t("header.anonymous", { defaultValue: "Usuario" })}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground break-words">
-          {email ?? "user@example.com"}
-        </p>
-      </div>
-    );
-  }, [t, userInfo]);
-
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
       {/* Header */}
-      <header className="flex items-center justify-between p-4 bg-card shadow-sm border-b border-border">
-        <div className="flex items-center space-x-4">
-          {headerLogoFailed ? (
-            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold select-none border border-border">
-              EG
-            </div>
-          ) : (
-            <Image
-              src="/logo.jpg"
-              alt="EduGraph Logo"
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full border border-border"
-              priority
-              unoptimized
-              onError={() => setHeaderLogoFailed(true)}
-            />
-          )}
-          <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <LanguageSwitcher />
-          <ThemeToggle />
-          <div className="relative">
-            <div className="flex items-center space-x-2 cursor-pointer group peer">
-              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                <FiUser className="text-secondary-foreground" />
-              </div>
-              <FiChevronDown className="group-hover:rotate-180 transition-transform text-muted-foreground" />
-            </div>
-            <div className="pointer-events-none opacity-0 peer-hover:opacity-100 peer-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 mt-2 w-max z-10">
-              <div className="bg-popover text-popover-foreground border border-border rounded-md shadow-lg">
-                {tooltipContent}
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
-            title="Cerrar sesión"
-          >
-            <FiLogOut size={20} className="text-muted-foreground hover:text-foreground" />
-          </button>
-        </div>
-      </header>
+      <DashboardHeader onLogout={handleLogout} />
 
       {/* Main Content */}
       <div className="p-6">
@@ -287,11 +187,8 @@ export default function Dashboard() {
                       : "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10"
                   }`}
                 >
-                  <span>
-                    {filtersCollapsed
-                      ? t("hide.show", { defaultValue: "Mostrar" })
-                      : t("hide.hide", { defaultValue: "Ocultar" })}
-                  </span>
+
+                  <span>{t(`button.${filtersCollapsed ? "show" : "hide"}`)}</span>
                   <svg
                     className={`h-3 w-3 transition-transform duration-200 ${
                       filtersCollapsed ? "rotate-0" : "-rotate-90"
@@ -365,7 +262,7 @@ export default function Dashboard() {
                     <p className="mt-2 text-xs text-red-600"> {t("filters.warning", {creditLimit})}</p>
                   )}
                   <button
-                    className={`mt-3 w-full px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    className={`mt-3 w-full px-3 py-2 rounded text-sm font-medium transition-all duration-200 ease-out cursor-pointer hover:scale-[1.04] ${
                       typeof creditLimit === 'number' && creditLimit > 0
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                         : 'bg-muted text-muted-foreground cursor-not-allowed'
@@ -455,7 +352,7 @@ export default function Dashboard() {
             {/* Advanced Settings Card */}
             <div className="bg-card rounded-lg shadow-sm border border-border">
               <div className="flex items-center justify-between p-6">
-                <h2 className="text-lg font-semibold">{t("filters.advanced", { defaultValue: "Configuración avanzada" })}</h2>
+                <h2 className="text-lg font-semibold">{t("filters.advanced.title")}</h2>
                 <button
                   onClick={() => setAdvancedOpen((v) => !v)}
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 focus:ring-offset-2 ${
@@ -464,11 +361,7 @@ export default function Dashboard() {
                       : "border-border text-muted-foreground hover:text-foreground hover:border-primary/50"
                   }`}
                 >
-                  <span>
-                    {advancedOpen
-                      ? t("hide.hide", { defaultValue: "Ocultar" })
-                      : t("hide.show", { defaultValue: "Mostrar" })}
-                  </span>
+                  <span>{t(`button.${advancedOpen ? "hide" : "show"}`)}</span>
                   <svg
                     className={`h-3 w-3 transition-transform duration-200 ${
                       advancedOpen ? "-rotate-90" : "rotate-0"
@@ -492,7 +385,7 @@ export default function Dashboard() {
                 <div className="p-6 pt-0 space-y-4">
                   <fieldset className="space-y-3">
                     <legend className="text-sm font-medium text-foreground">
-                      {t("filters.algorithm", { defaultValue: "Algoritmo" })}
+                      {t("filters.advanced.description")}
                     </legend>
                     <div className="space-y-2">
                       {algorithmOptions.map((option) => {
@@ -530,11 +423,30 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+
+            <div className="mt-4 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleResetDashboard}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:scale-[1.03] hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20 cursor-pointer"
+              >
+                <FiTrash2 className="h-4 w-4" />
+                {t("button.delete")}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSelection}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 ease-out hover:scale-[1.03] hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary-foreground cursor-pointer"
+              >
+                <FiSave className="h-4 w-4" />
+                {t("button.save")}
+              </button>
+            </div>
           </div>
 
           {/* Graph */}
-        <div className="lg:col-span-3 bg-card rounded-xl p-6 shadow-sm border border-border" style={{ minHeight: 'calc(100vh - 120px)' }}>
-          <div className="flex flex-col" style={{ minHeight: 0 }}>
+        <div className="lg:col-span-3 bg-card rounded-xl p-6 shadow-sm border border-border flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
+          <div className="flex flex-col flex-1 min-h-0">
             <CourseGraph
               courses={courses}
               displayCourses={coursesByCareer}
