@@ -74,7 +74,7 @@
         "cycle": "Cycle",
         "button": "View Details",
         "selector": {
-          "faild": "Select a Cycle",
+          "faild": "NR",
           "approved": "Approved",
           "reprobated": "Failed"
         }

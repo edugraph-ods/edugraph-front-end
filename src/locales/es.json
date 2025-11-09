@@ -79,7 +79,7 @@
         "cycle":"Ciclo",
         "button":"Ver detalle",
         "selector":{
-          "faild":"No rindió",
+          "faild":"NR",
           "approved":"Aprobado",
           "reprobated":"Reprobado",
           "critical":"Ruta Crítica"

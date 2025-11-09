@@ -52,6 +52,63 @@ export default function Dashboard() {
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("");
+  const [headerLogoFailed, setHeaderLogoFailed] = useState(false);
+
+  const algorithmOptions = useMemo(
+    () => [
+      {
+        value: "",
+        title: t("filters.algorithmOptions.auto.title", {
+          defaultValue: "Automático",
+        }),
+        description: t("filters.algorithmOptions.auto.description", {
+          defaultValue:
+            "Deja que la plataforma elija el método más adecuado según tu selección.",
+        }),
+      },
+      {
+        value: "greedy",
+        title: t("filters.algorithmOptions.greedy.title", {
+          defaultValue: "Greedy",
+        }),
+        description: t("filters.algorithmOptions.greedy.description", {
+          defaultValue:
+            "Prioriza cursos con menor carga primero para liberar prerrequisitos rápidamente.",
+        }),
+      },
+      {
+        value: "critical_path",
+        title: t("filters.algorithmOptions.critical_path.title", {
+          defaultValue: "Ruta crítica",
+        }),
+        description: t("filters.algorithmOptions.critical_path.description", {
+          defaultValue:
+            "Ordena los cursos destacando los que desbloquean más asignaturas en el plan.",
+        }),
+      },
+      {
+        value: "topological",
+        title: t("filters.algorithmOptions.topological.title", {
+          defaultValue: "Topológico",
+        }),
+        description: t("filters.algorithmOptions.topological.description", {
+          defaultValue:
+            "Produce un orden clásico sin ciclos respetando al máximo los prerrequisitos.",
+        }),
+      },
+      {
+        value: "heuristic_v2",
+        title: t("filters.algorithmOptions.heuristic_v2.title", {
+          defaultValue: "Heurístico v2",
+        }),
+        description: t("filters.algorithmOptions.heuristic_v2.description", {
+          defaultValue:
+            "Combina heurísticas de créditos y prerrequisitos para balancear cada ciclo.",
+        }),
+      },
+    ],
+    [t]
+  );
 
   const {
     selectedCycle,
@@ -83,6 +140,7 @@ export default function Dashboard() {
   const handleStatusChange = useCallback(
     (courseId: string, newStatus: CourseStatus) => {
       updateCourseStatus(courseId, newStatus);
+      setPlanResult(null); 
     },
     [updateCourseStatus]
   );
@@ -166,14 +224,22 @@ export default function Dashboard() {
       {/* Header */}
       <header className="flex items-center justify-between p-4 bg-card shadow-sm border-b border-border">
         <div className="flex items-center space-x-4">
-          <Image
-            src="/logo.jpg"
-            alt="EduGraph Logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-full border border-border"
-            priority
-          />
+          {headerLogoFailed ? (
+            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold select-none border border-border">
+              EG
+            </div>
+          ) : (
+            <Image
+              src="/logo.jpg"
+              alt="EduGraph Logo"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full border border-border"
+              priority
+              unoptimized
+              onError={() => setHeaderLogoFailed(true)}
+            />
+          )}
           <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
         </div>
 
@@ -215,9 +281,34 @@ export default function Dashboard() {
                 <h2 className="text-lg font-semibold">{t("filters.title")}</h2>
                 <button
                   onClick={() => setFiltersCollapsed((v) => !v)}
-                  className="text-sm px-2 py-1 rounded border border-input hover:bg-accent"
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 focus:ring-offset-2 ${
+                    filtersCollapsed
+                      ? "border-border text-muted-foreground hover:text-foreground hover:border-primary/50"
+                      : "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10"
+                  }`}
                 >
-                  {filtersCollapsed ? t("hide.show", { defaultValue: "Mostrar" }) : t("hide.hide", { defaultValue: "Ocultar" })}
+                  <span>
+                    {filtersCollapsed
+                      ? t("hide.show", { defaultValue: "Mostrar" })
+                      : t("hide.hide", { defaultValue: "Ocultar" })}
+                  </span>
+                  <svg
+                    className={`h-3 w-3 transition-transform duration-200 ${
+                      filtersCollapsed ? "rotate-0" : "-rotate-90"
+                    }`}
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3 4l3 3 3-3"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
               </div>
               {!filtersCollapsed && (
@@ -367,28 +458,75 @@ export default function Dashboard() {
                 <h2 className="text-lg font-semibold">{t("filters.advanced", { defaultValue: "Configuración avanzada" })}</h2>
                 <button
                   onClick={() => setAdvancedOpen((v) => !v)}
-                  className="text-sm px-2 py-1 rounded border border-input hover:bg-accent"
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 focus:ring-offset-2 ${
+                    advancedOpen
+                      ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10"
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-primary/50"
+                  }`}
                 >
-                  {advancedOpen ? t("hide.hide", { defaultValue: "Ocultar" }) : t("hide.show", { defaultValue: "Mostrar" })}
+                  <span>
+                    {advancedOpen
+                      ? t("hide.hide", { defaultValue: "Ocultar" })
+                      : t("hide.show", { defaultValue: "Mostrar" })}
+                  </span>
+                  <svg
+                    className={`h-3 w-3 transition-transform duration-200 ${
+                      advancedOpen ? "-rotate-90" : "rotate-0"
+                    }`}
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3 4l3 3 3-3"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
               </div>
               {advancedOpen && (
-                <div className="p-6 pt-0 space-y-3">
-                  <div>
-                    <label htmlFor="algorithm" className="block text-sm font-medium text-foreground">{t("filters.algorithm", { defaultValue: "Algoritmo" })}</label>
-                    <select
-                      id="algorithm"
-                      value={selectedAlgorithm}
-                      onChange={(e) => setSelectedAlgorithm(e.target.value)}
-                      className="w-full p-2 text-sm border border-input bg-background rounded-md"
-                    >
-                      <option value="">{t("filters.algorithm.auto", { defaultValue: "Automático" })}</option>
-                      <option value="greedy">Greedy</option>
-                      <option value="critical_path">Critical Path</option>
-                      <option value="topological">Topological</option>
-                      <option value="heuristic_v2">Heuristic v2</option>
-                    </select>
-                  </div>
+                <div className="p-6 pt-0 space-y-4">
+                  <fieldset className="space-y-3">
+                    <legend className="text-sm font-medium text-foreground">
+                      {t("filters.algorithm", { defaultValue: "Algoritmo" })}
+                    </legend>
+                    <div className="space-y-2">
+                      {algorithmOptions.map((option) => {
+                        const isSelected = selectedAlgorithm === option.value;
+                        return (
+                          <label
+                            key={option.value || "auto"}
+                            className={`flex items-start gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                              isSelected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                                : "border-border hover:border-primary/40"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="algorithm"
+                              value={option.value}
+                              checked={isSelected}
+                              onChange={() => setSelectedAlgorithm(option.value)}
+                              className="mt-1 h-4 w-4 accent-primary"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-foreground">
+                                {option.title}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {option.description}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
                 </div>
               )}
             </div>

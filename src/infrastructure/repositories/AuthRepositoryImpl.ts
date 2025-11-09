@@ -22,8 +22,13 @@ export const createAuthRepository = (): AuthRepository => {
     return toAuthSession(response);
   };
 
+  const signOut: AuthRepository["signOut"] = async () => {
+    Promise.resolve();
+  };
+
   return {
     signIn,
     signUp,
+    signOut,
   };
 };

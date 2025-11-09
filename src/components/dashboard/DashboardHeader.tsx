@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Image from 'next/image';
 import { FiUser, FiLogOut } from 'react-icons/fi';
 
@@ -6,16 +7,26 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader = ({ onLogout }: DashboardHeaderProps) => {
+  const [logoFailed, setLogoFailed] = useState(false);
   return (
     <header className="flex items-center justify-between p-4 bg-white shadow-sm">
       <div className="flex items-center space-x-2">
-        <Image
-          src="/logo.jpg"
-          alt="EduGraph Logo"
-          width={32}
-          height={32}
-          className="rounded-full"
-        />
+        {logoFailed ? (
+          <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold select-none">
+            EG
+          </div>
+        ) : (
+          <Image
+            src="/logo.jpg"
+            alt="EduGraph Logo"
+            width={32}
+            height={32}
+            className="rounded-full"
+            priority
+            unoptimized
+            onError={() => setLogoFailed(true)}
+          />
+        )}
         <h1 className="text-xl font-bold">EduGraph</h1>
       </div>
       
