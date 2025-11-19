@@ -6,12 +6,12 @@
   },
   "Register": {
     "title": "Create an Account",
-    "name":"Name",
+    "name": "Name",
     "namePlaceholder": "Full Name",
-    "email":"Email",
+    "email": "Email",
     "emailPlaceholder": "Institutional Email",
     "Strength": "Strength",
-    "password":"Password",
+    "password": "Password",
     "passwordPlaceholder": "Password",
     "weak": "Weak",
     "medium": "Medium",
@@ -20,11 +20,11 @@
     "accept": "I accept the",
     "terms": "Terms and Conditions"
   },
-"Login": {
+  "Login": {
     "title": "Sign In",
-    "email":"Email",
+    "email": "Email",
     "emailPlaceholder": "Institutional Email",
-    "password":"Password",
+    "password": "Password",
     "passwordPlaceholder": "Password",
     "submit": "Sign In",
     "forgotPassword": "Forgot your password?",
@@ -34,19 +34,118 @@
     "regitertitle": "Hello Student",
     "regiterdescription": "Optimize your academic path with smart routes",
     "regiterbutton": "Sign Up",
-    "loginTitle":"Welcome back", 
-    "loginDescription":"Enter your academic information to use all the features of the tool", 
-    "loginButton":"Sign In"
+    "loginTitle": "Welcome back",
+    "loginDescription": "Enter your academic information to use all the features of the tool",
+    "loginButton": "Sign In"
   },
   "NotFound": {
     "title": "Page Not Found",
     "description": "The page you're looking for doesn't exist or has been moved.",
     "backToHome": "Back to Home"
   },
-  "Loading":{
+  "Loading": {
     "title": "Getting everything ready for you",
     "loading": "Loading...",
     "redirecting": "Redirecting...",
     "ready": "Ready"
+  },
+  "dashboard": {
+    "title": "EduGraph",
+    "description": "Educational Graph Platform",
+    "loading": "Loading...",
+    "redirecting": "Redirecting...",
+    "ready": "Ready",
+    "filters": {
+      "title": "Filters",
+      "career": "Career",
+      "credits": "Credits",
+      "careerPlaceholder": "Available Careers",
+      "loading": "Academic Load",
+      "total": "Total Credits",
+      "warning": "Warning: You have exceeded the {creditLimit} credit limit.",
+      "limit": "Credit Limit",
+      "button": "Confirm",
+      "cycles": "Cycles",
+      "cycle": "Cycle",
+      "required": "Required",
+      "detail": {
+        "title": "Flow Details",
+        "credits": "Credits",
+        "cycle": "Cycle",
+        "button": "View Details",
+        "selector": {
+          "faild": "NR",
+          "approved": "Approved",
+          "reprobated": "Failed"
+        }
+      },
+      "advanced": {
+        "title": "Advanced settings",
+        "description": "Available algorithms"
+      }
+    },
+    "detail": {
+      "title": "Generated Plan",
+      "credits": "Total cycles:",
+      "cycle": "Cycle",
+      "credit": "Credits",
+      "nothing": "No courses"
+    },
+    "graph": {
+      "title": "Legend",
+      "description": "Select a course to view the graph",
+      "approved": "Approved",
+      "failed": "Failed",
+      "not_taken": "Not taken",
+      "critical": "Critical Course"
+    },
+    "course": {
+      "title": "Course Details",
+      "course": "Course Name",
+      "code": "Code",
+      "university": "University",
+      "program": "Program",
+      "career": "Career",
+      "cycle": "Cycle",
+      "credits": "Credits",
+      "status": "Status",
+      "isInCriticalPath": "Critical Path",
+      "prerequisites": "Prerequisites",
+      "not_required": "No prerequisites required",
+      "release": "Opening",
+      "nothing": "Does not unlock additional courses",
+      "close": "Close"
+    },
+    "button": {
+      "export": "Export PDF",
+      "load": "Load data",
+      "delete": "Delete",
+      "save": "Save",
+      "show": "Show",
+      "hide": "Hide"
+    }
+  },
+  "recoveryPassword": {
+    "title": "Account Recovery",
+    "description": "Having trouble logging in?",
+    "subtitle": "Enter the email associated with your account and we'll send you a recovery code.",
+    "subtitlepassword": "Enter the code you received and create a new, secure password.",
+    "email": "Need more help? Email us at",
+    "emaillabel": "Email address",
+    "support":"soporte@edugraph.com",
+    "emailPlaceholder": "email@example.com",
+    "code": "Recovery Code",
+    "codePlaceholder": "Recovery Code",
+    "password": "New Password",
+    "passwordPlaceholder": "New Password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "submit": "Submit Code",
+    "button": "Update Password",
+    "backbutton": "Back to Code Request",
+    "backToHome": "Back to Home of session",
+    "span": "We sent you a temporary code to your email. Review it and enter it below.",
+    "alert": "Passwords do not match. Please try again.",
+    "confirm": "Your password was successfully updated. You can now log in."
   }
 }

@@ -12,29 +12,29 @@
   },
   "Register": {
     "title": "Crear una Cuenta",
-    "name":"Nombre",
+    "name": "Nombre",
     "namePlaceholder": "Nombre Completo",
-    "email":"Correo",
+    "email": "Correo",
     "emailPlaceholder": "Correo Institucional",
     "Strength": "Fortaleza",
-    "password":"Contraseña",
+    "password": "Contraseña",
     "passwordPlaceholder": "Contraseña",
     "weak": "Débil",
     "medium": "Medio",
     "strong": "Fuerte",
     "submit": "Registrarse",
-    "accept":"Acepto los",
-    "terms":"Terminos y Condiciones"
+    "accept": "Acepto los",
+    "terms": "Terminos y Condiciones"
   },
   "Login": {
     "title": "Iniciar Sesión",
-    "email":"Correo",
+    "email": "Correo",
     "emailPlaceholder": "Correo Institucional",
-    "password":"Contraseña",
+    "password": "Contraseña",
     "passwordPlaceholder": "Contraseña",
     "submit": "Iniciar Sesión",
     "forgotPassword": "¿Olvidaste tu contraseña?",
-    "remember":"Recordarme"
+    "remember": "Recordarme"
   },
   "Auth": {
     "regitertitle": "Hola Estudiante",
@@ -53,6 +53,105 @@
     "title": "Preparando todo para ti",
     "loading": "Cargando...",
     "redirecting": "Redirigiendo...",
-    "ready":"Listo"
+    "ready": "Listo"
+  },
+  "dashboard": {
+    "title": "EduGraph",
+    "description": "Plataforma Educativa de Grafos",
+    "loading": "Cargando...",
+    "redirecting": "Redirigiendo...",
+    "ready": "Listo",
+    "filters": {
+      "title": "Filtros",
+      "career": "Carrera",
+      "careerPlaceholder": "Carreras disponibles",
+      "loading": "Carga academica",
+      "total": "Total de creditos",
+      "warning": "Advertencia: has superado el límite de {creditLimit} créditos.",
+      "limit": "Limite de creditos",
+      "button": "Confirmar",
+      "cycles": "Ciclos",
+      "cycle": "Ciclo",
+      "required": "Requisitos",
+      "detail": {
+        "title": "Detalle del flujo",
+        "credits": "Creditos",
+        "cycle": "Ciclo",
+        "button": "Ver detalle",
+        "selector": {
+          "faild": "NR",
+          "approved": "Aprobado",
+          "reprobated": "Reprobado",
+          "critical": "Ruta Crítica"
+        }
+      },
+      "advanced": {
+        "title": "Configuracion avanzada",
+        "description": "Algoritmos disponibles"
+      }
+    },
+    "detail": {
+      "title": "Plan generado",
+      "credits": "Total de ciclos:",
+      "cycle": "Ciclo",
+      "credit": "creditos",
+      "nothing": "Sin cursos"
+    },
+    "graph": {
+      "title": "Leyenda",
+      "description": "Selecciona un curso para visualizar el grafo",
+      "approved": "Aprobado",
+      "failed": "Desaprobado",
+      "not_taken": "No rendido",
+      "critical": "Curso Critico"
+    },
+    "course": {
+      "title": "Detalle del curso",
+      "course": "Nombre del curso",
+      "code": "Código",
+      "university": "Universidad",
+      "program": "Programa",
+      "career": "Carrera",
+      "cycle": "Ciclo",
+      "credits": "Creditos",
+      "status": "Estado",
+      "isInCriticalPath": "Ruta critica",
+      "prerequisites": "Prerrequisitos",
+      "not_required": "No requiere cursos previos.",
+      "release": "Apertura",
+      "nothing": "No desbloquea cursos adicionales.",
+      "close": "Cerrar"
+    },
+    "button": {
+      "export": "Exportar PDF",
+      "load": "Cargar datos",
+      "delete": "Borrar",
+      "save": "Guardar",
+      "show": "Mostrar",
+      "hide": "Ocultar"
+    }
+  },
+  "recoveryPassword": {
+    "title": "Recuperación de cuenta",
+    "description": "¿Problemas para ingresar?",
+    "subtitle": "Ingresa el correo asociado a tu cuenta y te enviaremos un código de recuperación.",
+    "subtitlepassword":"Ingresa el código que recibiste y crea una nueva contraseña segura.",
+    "email": "¿Necesitas ayuda adicional? Escríbenos a",
+    "emaillabel":"Correo electrónico",
+    "support":"soporte@edugraph.com",
+    "emailPlaceholder": "correo@example.com",
+    "code":"Código de recuperación",
+    "codePlaceholder": "Código de recuperación",
+    "password":"Nueva contraseña",
+    "passwordPlaceholder": "Nueva contraseña",
+    "confirmPassword":"Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Confirma tu contraseña",
+    "submit": "Enviar codigo",
+    "button":"Actualizar contraseña",
+    "backbutton": "Volver a solicitud de codigo",
+    "backToHome": "Volver al inicio de sesion",
+    "span":"Te enviamos un código temporal a tu correo. Revísalo e ingrésalo a continuación.",
+    "alert":"Las contraseñas no coinciden. Vuelve a intentarlo.",
+    "confirm":"Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión."
   }
 }

@@ -1,5 +1,6 @@
 import { FiChevronDown, FiChevronUp, FiX, FiFilter, FiBookOpen } from 'react-icons/fi';
-import { Course, CourseStatus } from '@/hooks/use-course';
+import type { Course } from '@/domain/entities/course';
+import type { CourseStatus } from '@/domain/entities/course';
 
 type StatusFilter = 'all' | CourseStatus;
 
@@ -11,7 +12,7 @@ interface FilterPanelProps {
   careers: Array<{ id: string; name: string }>;
   onSelectCycle: (cycle: number | null) => void;
   onSelectCareer: (careerId: string) => void;
-  onCourseStatusChange: (courseId: string, status: CourseStatus) => void;
+  onCourseStatusChange: (courseId: string) => void;
   filteredCourses: Course[];
   onClearFilters: () => void;
   showStudyPlanOnly: boolean;
@@ -36,25 +37,18 @@ export const FilterPanel = ({
   statusFilter,
   onStatusFilterChange,
 }: FilterPanelProps) => {
-  const statusColors = {
+  const statusColors: Record<CourseStatus, string> = {
     approved: 'bg-green-100 text-green-800 border-green-200',
     failed: 'bg-red-100 text-red-800 border-red-200',
     not_taken: 'bg-gray-100 text-gray-800 border-gray-200'
   };
 
-  const statusLabels = {
+  const statusLabels: Record<CourseStatus | 'all', string> = {
     approved: 'Aprobados',
     failed: 'Desaprobados',
     not_taken: 'No rendidos',
     all: 'Todos'
   };
-
-  const getNextStatus = (currentStatus: CourseStatus): CourseStatus => {
-    const statusOrder: CourseStatus[] = ['not_taken', 'approved', 'failed'];
-    const currentIndex = statusOrder.indexOf(currentStatus);
-    return statusOrder[(currentIndex + 1) % statusOrder.length];
-  };
-
   const hasActiveFilters = selectedCycle !== null || selectedCareer !== '' || statusFilter !== 'all' || showStudyPlanOnly;
 
   return (
@@ -149,7 +143,7 @@ export const FilterPanel = ({
                       <div
                         key={course.id}
                         className={`px-3 py-2 text-sm rounded cursor-pointer border ${statusColors[course.status]}`}
-                        onClick={() => onCourseStatusChange(course.id, getNextStatus(course.status))}
+                        onClick={() => onCourseStatusChange(course.id)}
                         title={`Haz clic para cambiar el estado (${statusLabels[course.status]})`}
                       >
                         <div className="flex justify-between items-center">
