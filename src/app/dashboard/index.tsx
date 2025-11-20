@@ -9,6 +9,10 @@ import { useGraph } from "@/presentation/hooks/useGraph";
 import type { PlanResult } from "@/domain/entities/graph";
 import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { useUniversity } from "@/presentation/hooks/useUniversity";
+import type { University } from "@/domain/entities/university";
+import type { Career as ApiCareer } from "@/domain/entities/career";
+import { useCareer } from "@/presentation/hooks/useCareer";
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph"), {
   ssr: false,
@@ -22,6 +26,11 @@ export default function Dashboard() {
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("");
+  const { listUniversities, listCareersByUniversity } = useUniversity();
+  const { listCoursesByCareer } = useCareer();
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [selectedUniversity, setSelectedUniversity] = useState<string>("");
+  const [careerOptions, setCareerOptions] = useState<{ id: string; name: string }[]>([]);
 
   const algorithmOptions = useMemo(
     () => [
@@ -101,11 +110,71 @@ export default function Dashboard() {
     setCoursesList,
     setCreditLimit,
     careers,
+    setSelectedCareerValue,
   } = useDashboard();
 
   const coursesByCareer = useMemo(() => {
     return selectedCareer ? courses.filter((c: Course) => c.career === selectedCareer) : courses;
   }, [courses, selectedCareer]);
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      try {
+        const uni = await listUniversities();
+        if (!active) return;
+        setUniversities(uni);
+      } catch (e) {
+        console.error("universities load error", e);
+      }
+    };
+    run();
+    return () => {
+      active = false;
+    };
+  }, [listUniversities]);
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      setSelectedCareerValue("");
+      if (!selectedUniversity) {
+        setCareerOptions([]);
+        return;
+      }
+      try {
+        const list = await listCareersByUniversity(selectedUniversity);
+        if (!active) return;
+        setCareerOptions(list.map((c: ApiCareer) => ({ id: c.id, name: c.name })));
+      } catch (e) {
+        console.error("careers by university load error", e);
+        if (active) setCareerOptions([]);
+      }
+    };
+    run();
+    return () => {
+      active = false;
+    };
+  }, [listCareersByUniversity, selectedUniversity, setSelectedCareerValue]);
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      if (!selectedCareer) return;
+      try {
+        const careerCourses = await listCoursesByCareer(selectedCareer);
+        if (!active) return;
+        setCoursesList(careerCourses);
+        setPlanResult(null);
+      } catch (e) {
+        console.error("courses by career load error", e);
+      }
+    };
+    run();
+    return () => {
+      active = false;
+    };
+  }, [listCoursesByCareer, selectedCareer, setCoursesList]);
 
   const handleStatusChange = useCallback(
     (courseId: string, newStatus: CourseStatus) => {
@@ -211,6 +280,29 @@ export default function Dashboard() {
               {!filtersCollapsed && (
                 <div className="p-6 pt-4">
                 
+                {/* Universities Selector */}
+                <div className="mb-6">
+                  <label
+                    htmlFor="university"
+                    className="block text-sm font-medium text-foreground mb-1"
+                  >
+                    {t("filters.university")}
+                  </label>
+                  <select
+                    id="university"
+                    value={selectedUniversity}
+                    onChange={(e) => setSelectedUniversity(e.target.value)}
+                    className="flex items-center justify-between w-full p-2 text-left text-sm font-medium text-foreground bg-background border border-input rounded-md shadow-sm hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  >
+                    <option value="">{t("filters.universityPlaceholder")}</option>
+                    {universities.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.acronym ? `${u.acronym} - ${u.name}` : u.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Career Selector */}
                 <div className="mb-6">
                   <label
@@ -226,7 +318,7 @@ export default function Dashboard() {
                     className="flex items-center justify-between w-full p-2 text-left text-sm font-medium text-foreground bg-background border border-input rounded-md shadow-sm hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                   >
                     <option value="">{t("filters.careerPlaceholder")}</option>
-                    {(careers.length ? careers : CAREERS).map((career) => (
+                    {(careerOptions.length ? careerOptions : (careers.length ? careers : CAREERS)).map((career) => (
                       <option key={career.id} value={career.id}>
                         {career.name}
                       </option>
