@@ -64,6 +64,8 @@
     "filters": {
       "title": "Filtros",
       "career": "Carrera",
+      "university": "Universidad",
+      "universityPlaceholder":"Lista de universidades",
       "careerPlaceholder": "Carreras disponibles",
       "loading": "Carga academica",
       "total": "Total de creditos",

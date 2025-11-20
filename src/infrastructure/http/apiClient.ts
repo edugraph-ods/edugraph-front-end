@@ -13,6 +13,16 @@ const resolveApiBase = () => {
   return trimmedBase.endsWith("/") ? trimmedBase.slice(0, -1) : trimmedBase;
 };
 
+const buildErrorMessage = async (
+  response: Response,
+  method: string,
+  url: string
+): Promise<string> => {
+  const parsed = await parseErrorMessage(response);
+  const status = `${response.status}${response.statusText ? ` ${response.statusText}` : ""}`;
+  return `[${method}] ${url} -> ${status}: ${parsed}`;
+};
+
 const API_BASE_URL = resolveApiBase();
 
 const buildUrl = (path: string) => {
@@ -70,7 +80,8 @@ export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
     credentials: "include",
   });
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    const message = await buildErrorMessage(response, init?.method ?? "GET", url);
+    throw new Error(message);
   }
   if (response.status === 204) return {} as T;
   const contentType = response.headers.get("content-type") ?? "";
@@ -100,7 +111,8 @@ export const requestJson = async <T>(
     credentials: "include",
   });
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    const message = await buildErrorMessage(response, init?.method ?? "POST", url);
+    throw new Error(message);
   }
   if (response.status === 204) return {} as T;
   const contentType = response.headers.get("content-type") ?? "";
@@ -130,7 +142,8 @@ export const postJson = async <T>(
     credentials: "include",
   });
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    const message = await buildErrorMessage(response, init?.method ?? "POST", url);
+    throw new Error(message);
   }
   if (response.status === 204) return {} as T;
   const contentType = response.headers.get("content-type") ?? "";

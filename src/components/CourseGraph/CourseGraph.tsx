@@ -81,8 +81,6 @@ const CourseGraph: FC<CourseGraphProps> = ({
   useEffect(() => setMounted(true), []);
   const themeMode = resolvedTheme ?? "light";
 
-  // No auto-centering; we avoid fitView to keep user's position.
-
   const miniMapNodeColor = (node: Node<CourseNodeData>) => {
     const data = node.data;
     const status = data?.status;
