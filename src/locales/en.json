@@ -58,6 +58,8 @@
     "filters": {
       "title": "Filters",
       "career": "Career",
+      "university": "University",
+      "universityPlaceholder":"List of universities",
       "credits": "Credits",
       "careerPlaceholder": "Available Careers",
       "loading": "Academic Load",

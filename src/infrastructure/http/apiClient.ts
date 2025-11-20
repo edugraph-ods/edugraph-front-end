@@ -1,15 +1,26 @@
 import { readAuthToken } from "@/shared/utils/authToken";
 
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const DEFAULT_API_BASE_URL = "";
 
 const resolveApiBase = () => {
   const envBase =
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_BACKEND_URL ??
-    (DEFAULT_API_BASE_URL || "http://localhost:8000");
+    DEFAULT_API_BASE_URL;
   const trimmedBase = envBase.trim();
-  if (trimmedBase.length === 0) return DEFAULT_API_BASE_URL;
+  // If no env base is provided, prefer relative paths to use Next.js rewrites
+  if (trimmedBase.length === 0) return "";
   return trimmedBase.endsWith("/") ? trimmedBase.slice(0, -1) : trimmedBase;
+};
+
+const buildErrorMessage = async (
+  response: Response,
+  method: string,
+  url: string
+): Promise<string> => {
+  const parsed = await parseErrorMessage(response);
+  const status = `${response.status}${response.statusText ? ` ${response.statusText}` : ""}`;
+  return `[${method}] ${url} -> ${status}: ${parsed}`;
 };
 
 const API_BASE_URL = resolveApiBase();
@@ -69,7 +80,8 @@ export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
     credentials: "include",
   });
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    const message = await buildErrorMessage(response, init?.method ?? "GET", url);
+    throw new Error(message);
   }
   if (response.status === 204) return {} as T;
   const contentType = response.headers.get("content-type") ?? "";
@@ -99,7 +111,8 @@ export const requestJson = async <T>(
     credentials: "include",
   });
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    const message = await buildErrorMessage(response, init?.method ?? "POST", url);
+    throw new Error(message);
   }
   if (response.status === 204) return {} as T;
   const contentType = response.headers.get("content-type") ?? "";
@@ -129,7 +142,8 @@ export const postJson = async <T>(
     credentials: "include",
   });
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    const message = await buildErrorMessage(response, init?.method ?? "POST", url);
+    throw new Error(message);
   }
   if (response.status === 204) return {} as T;
   const contentType = response.headers.get("content-type") ?? "";

@@ -6,16 +6,19 @@ import Link from "next/link";
 import { FiHome, FiMail, FiUnlock, FiKey } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useRecovery } from "@/presentation/hooks/useRecovery";
 
 type RecoveryStep = "request" | "reset";
 
 export default function RecoveryPasswordPage() {
+  const { requestRecoveryCode, verifyRecoveryCode, resetPassword } = useRecovery();
   const [step, setStep] = useState<RecoveryStep>("request");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [feedbackKey, setFeedbackKey] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation('recoveryPassword');
 
@@ -23,17 +26,24 @@ export default function RecoveryPasswordPage() {
 
   const resetState = () => {
     setFeedbackKey(null);
+    setErrorMessage(null);
     setIsSubmitting(false);
   };
 
   const handleRequestCode = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setStep("reset");
-      setFeedbackKey("span");
-      setIsSubmitting(false);
-    }, 800);
+    setErrorMessage(null);
+    requestRecoveryCode({ email })
+      .then(() => {
+        setStep("reset");
+        setFeedbackKey("span");
+      })
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : "Unexpected error";
+        setErrorMessage(msg);
+      })
+      .finally(() => setIsSubmitting(false));
   };
 
   const handleResetPassword = (event: React.FormEvent<HTMLFormElement>) => {
@@ -44,10 +54,17 @@ export default function RecoveryPasswordPage() {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      setFeedbackKey("confirm");
-      setIsSubmitting(false);
-    }, 800);
+    setErrorMessage(null);
+    verifyRecoveryCode({ email, code })
+      .then(() => resetPassword({ email, newPassword: password }))
+      .then(() => {
+        setFeedbackKey("confirm");
+      })
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : "Unexpected error";
+        setErrorMessage(msg);
+      })
+      .finally(() => setIsSubmitting(false));
   };
 
   return (
@@ -183,6 +200,11 @@ export default function RecoveryPasswordPage() {
               {feedbackKey && (
                 <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
                   {t(feedbackKey)}
+                </div>
+              )}
+              {errorMessage && (
+                <div className="rounded-xl border border-red-300 bg-red-100 px-4 py-3 text-sm text-red-700">
+                  {errorMessage}
                 </div>
               )}
 
