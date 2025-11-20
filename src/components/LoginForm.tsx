@@ -73,7 +73,7 @@ export const LoginForm = () => {
 
       <form onSubmit={handleSubmit}>
         {/* Email Input */}
-        <div className="space-y-1">
+        <div className="space-y-2 mb-6">
           <label htmlFor="email" className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
             {t('email')}
           </label>
@@ -91,7 +91,7 @@ export const LoginForm = () => {
         </div>
 
         {/* Password Input */}
-        <div className="space-y-1">
+        <div className="space-y-2 mb-6">
           <label htmlFor="password" className="block text-sm sm:text-base font-medium text-gray-700">
             {t('password')}
           </label>
@@ -109,7 +109,7 @@ export const LoginForm = () => {
         </div>
 
         {/* Remember Me & Forgot Password */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0 mt-3 mb-5">
           <div className="group flex items-center">
             <label className="flex items-center space-x-3 cursor-pointer select-none">
               <div className="relative">
