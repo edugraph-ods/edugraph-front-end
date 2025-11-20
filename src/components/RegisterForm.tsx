@@ -213,7 +213,7 @@ export const RegisterForm = () => {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer disabled:opacity-70"
+            className="w-full flex justify-center py-3 px-4 border-0 rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus-visible:outline-none ring-0 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 transition-all duration-300 ease-in-out transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.99] active:shadow-md cursor-pointer disabled:opacity-70"
             disabled={isLoading}
           >
             {t("submit")}
