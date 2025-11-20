@@ -6,6 +6,8 @@ import { FiChevronDown } from 'react-icons/fi';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { ThemeToggle } from '../theme-provider';
 import { readAuthToken } from '@/shared/utils/authToken';
+import { useStudent } from '@/presentation/hooks/useStudent';
+import type { StudentProfile } from '@/domain/entities/student';
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -19,6 +21,7 @@ interface DecodedTokenPayload {
   email?: string;
   [key: string]: unknown;
 }
+
 const decodePayload = <T,>(token: string): T | null => {
   try {
     const parts = token.split(".");
@@ -35,6 +38,7 @@ const decodePayload = <T,>(token: string): T | null => {
 export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData }: DashboardHeaderProps) => {
   const { t } = useTranslation('dashboard');
   const [headerLogoFailed, setHeaderLogoFailed] = useState(false);
+  const { getProfile } = useStudent();
 
   const handleLogout = () => {
     onLogout();
@@ -55,32 +59,110 @@ export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData }: Dash
   };
 
   const [userInfo, setUserInfo] = useState<DecodedTokenPayload | null>(null);
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     setUserInfo(getUserInfo());
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      if (!userInfo) {
+        if (isMounted) {
+          setStudentProfile(null);
+          setProfileError(null);
+          setIsProfileLoading(false);
+        }
+        return;
+      }
+
+      try {
+        if (isMounted) {
+          setProfileError(null);
+          setIsProfileLoading(true);
+        }
+        const profile = await getProfile();
+        if (isMounted) {
+          setStudentProfile(profile);
+        }
+      } catch (error) {
+        if (isMounted) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : t('header.profileError', { defaultValue: 'No se pudo cargar el perfil.' });
+          setProfileError(message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsProfileLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [getProfile, t, userInfo]);
+
   const tooltipContent = useMemo(() => {
+    if (isProfileLoading) {
+      return (
+        <div className="px-4 py-3 text-sm text-muted-foreground">
+          {t('header.loadingProfile', { defaultValue: 'Cargando perfil...' })}
+        </div>
+      );
+    }
+
     if (!userInfo) {
+      if (profileError) {
+        return (
+          <div className="px-4 py-3 text-sm text-destructive">
+            {profileError}
+          </div>
+        );
+      }
       return (
         <div className="px-4 py-3 text-sm text-muted-foreground">
           {t("header.noUser", { defaultValue: "Sesión no identificada." })}
         </div>
       );
     }
-    const { full_name, name, email } = userInfo;
+    const displayName =
+      studentProfile?.name ??
+      userInfo.full_name ??
+      userInfo.name ??
+      t('header.anonymous', { defaultValue: 'Usuario' });
+    const displayEmail = studentProfile?.email ?? userInfo.email ?? 'user@example.com';
+    const displayUniversity = studentProfile?.university;
 
     return (
       <div className="px-4 py-3 w-56">
         <p className="text-sm font-semibold text-foreground">
-          {full_name ?? name ?? t("header.anonymous", { defaultValue: "Usuario" })}
+          {displayName}
         </p>
         <p className="mt-1 text-xs text-muted-foreground break-words">
-          {email ?? "user@example.com"}
+          {displayEmail}
         </p>
+        {displayUniversity ? (
+          <p className="mt-2 text-xs text-muted-foreground break-words">
+            {displayUniversity}
+          </p>
+        ) : null}
+        {profileError ? (
+          <p className="mt-2 text-xs text-destructive">
+            {profileError}
+          </p>
+        ) : null}
       </div>
     );
-  }, [t, userInfo]);
+  }, [isProfileLoading, profileError, studentProfile, t, userInfo]);
 
   return (
     <header className="flex items-center justify-between p-4 bg-card shadow-sm border-b border-border">
