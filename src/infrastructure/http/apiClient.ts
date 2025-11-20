@@ -1,14 +1,15 @@
 import { readAuthToken } from "@/shared/utils/authToken";
 
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const DEFAULT_API_BASE_URL = "";
 
 const resolveApiBase = () => {
   const envBase =
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_BACKEND_URL ??
-    (DEFAULT_API_BASE_URL || "http://localhost:8000");
+    DEFAULT_API_BASE_URL;
   const trimmedBase = envBase.trim();
-  if (trimmedBase.length === 0) return DEFAULT_API_BASE_URL;
+  // If no env base is provided, prefer relative paths to use Next.js rewrites
+  if (trimmedBase.length === 0) return "";
   return trimmedBase.endsWith("/") ? trimmedBase.slice(0, -1) : trimmedBase;
 };
 
