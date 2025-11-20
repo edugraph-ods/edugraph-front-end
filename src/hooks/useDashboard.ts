@@ -58,7 +58,7 @@ const deriveStatuses = (courses: Course[]): Record<string, CourseStatus> => {
     }, {});
 };
 
-export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses: Course[]) => void; careers: { id: string; name: string }[]; setCreditLimit: (n: number | null) => void } => {
+export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses: Course[]) => void; careers: { id: string; name: string }[]; setCreditLimit: (n: number | null) => void; setSelectedCareerValue: (v: string) => void } => {
     const router = useRouter();
     const { signOut } = useAuth();
 
@@ -362,6 +362,10 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
         persist();
     }, [creditLimit, courses, hydratedPreferences, plannedCourseIds, savePreferences, selectedCareer]);
 
+    const setSelectedCareerValue = useCallback((v: string) => {
+        setSelectedCareer(v);
+    }, []);
+
     return {
         selectedCycle,
         selectedCareer,
@@ -388,6 +392,7 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
         setCoursesList,
         careers,
         setCreditLimit,
+        setSelectedCareerValue,
         statusColors: dashboardFilters.statusColors,
         statusLabels: dashboardFilters.statusLabels,
     };
