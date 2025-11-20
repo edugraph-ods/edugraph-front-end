@@ -4,9 +4,15 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const isStaticAsset = /\.[^/]+$/.test(pathname);
+  if (isStaticAsset) {
+    return NextResponse.next();
+  }
+
   const publicRoutes = [
     '/auth/sign-in', 
     '/auth/sign-up', 
+    '/auth/recovery-password',
     '/_next', 
     '/api',
     '/_error',

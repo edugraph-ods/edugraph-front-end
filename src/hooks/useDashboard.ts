@@ -1,6 +1,19 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Course, CourseStatus } from './use-course';
+import type { Course, CourseStatus } from '@/domain/entities/course';
+import { useAuth } from '@/presentation/hooks/useAuth';
+import { clearAuthToken } from '@/shared/utils/authToken';
+import { createDashboardPreferencesRepository } from '../infrastructure/repositories/DashboardPreferencesLocalRepository';
+import { createGetStoredDashboardState } from '../application/useCases/dashboard/createGetStoredDashboardState';
+import { createSaveDashboardState } from '../application/useCases/dashboard/createSaveDashboardState';
+import { createClearDashboardState } from '../application/useCases/dashboard/createClearDashboardState';
+import { createStaticCourseCatalogRepository } from '@/infrastructure/repositories/StaticCourseCatalogRepository';
+import { createListCourses } from '@/application/useCases/courseCatalog/createListCourses';
+import { createUpdateCourseStatus } from '@/application/useCases/dashboard/createUpdateCourseStatus';
+import { createToggleCourseStatus } from '../application/useCases/dashboard/createToggleCourseStatus';
+import { createTogglePlannedCourse } from '../application/useCases/dashboard/createTogglePlannedCourse';
+import { createDashboardFiltersFacade } from '../application/useCases/dashboard/createDashboardFiltersFacade';
+import type { DashboardState } from '../domain/entities/dashboard';
 
 export const CAREERS = [
     { id: 'cs', name: 'Ciencias de la Computación' },
@@ -21,10 +34,12 @@ interface UseDashboardReturn {
     creditLimit: number | null;
     isOverCreditLimit: boolean;
     selectionError?: string;
+    statusColors: Record<CourseStatus, string>;
+    statusLabels: Record<CourseStatus | 'all', string>;
 
     handleCareerChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     handleClearFilters: () => void;
-    handleLogout: () => void;
+    handleLogout: () => Promise<void>;
     toggleCycle: (cycle: number) => void;
     handleSelectCycle: (cycle: number | null) => void;
     handleCourseSelect: (courseId: string) => void;
@@ -36,7 +51,17 @@ interface UseDashboardReturn {
     cycles: number[];
 }
 
+const deriveStatuses = (courses: Course[]): Record<string, CourseStatus> => {
+    return courses.reduce<Record<string, CourseStatus>>((acc, course) => {
+        acc[course.id] = course.status;
+        return acc;
+    }, {});
+};
+
 export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses: Course[]) => void; careers: { id: string; name: string }[]; setCreditLimit: (n: number | null) => void } => {
+    const router = useRouter();
+    const { signOut } = useAuth();
+
     const [selectedCycle, setSelectedCycle] = useState<number | null>(null);
     const [courses, setCourses] = useState<Course[]>([]);
     const [selectedCareer, setSelectedCareer] = useState<string>('');
@@ -46,7 +71,19 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
     const [plannedCourseIds, setPlannedCourseIds] = useState<string[]>([]);
     const [selectionError, setSelectionError] = useState<string>("");
     const [creditLimit, setCreditLimit] = useState<number | null>(null);
-    const router = useRouter();
+    const [hydratedPreferences, setHydratedPreferences] = useState(false);
+
+    const preferencesRepository = useMemo(() => createDashboardPreferencesRepository(), []);
+    const courseCatalogRepository = useMemo(() => createStaticCourseCatalogRepository(), []);
+    const getStoredPreferences = useMemo(() => createGetStoredDashboardState(preferencesRepository), [preferencesRepository]);
+    const savePreferences = useMemo(() => createSaveDashboardState(preferencesRepository), [preferencesRepository]);
+    const clearPreferences = useMemo(() => createClearDashboardState(preferencesRepository), [preferencesRepository]);
+    const listCourses = useMemo(() => createListCourses(courseCatalogRepository), [courseCatalogRepository]);
+    const updateCourseStatusUseCase = useMemo(() => createUpdateCourseStatus(), []);
+    const toggleCourseStatusUseCase = useMemo(() => createToggleCourseStatus(), []);
+    const togglePlannedCourseUseCase = useMemo(() => createTogglePlannedCourse(), []);
+    const dashboardFilters = useMemo(() => createDashboardFiltersFacade(), []);
+    const preferencesRef = useRef<DashboardState | null>(null);
 
     const cycles = useMemo(() => {
         const cyclesSet = new Set<number>();
@@ -54,89 +91,96 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
         return Array.from(cyclesSet).sort((a, b) => a - b);
     }, [courses]);
 
-    const careers = useMemo(() => {
-        const values = new Set<string>();
-        courses.forEach(c => { if (c.career) values.add(c.career); });
-        return Array.from(values).sort().map(v => ({ id: v, name: v }));
-    }, [courses]);
+    const careers = useMemo(() => dashboardFilters.deriveCareers(courses), [courses, dashboardFilters]);
 
-    const updateFilteredCourses = useCallback((cycle: number | null) => {
-        if (!cycle) {
-            setFilteredCourses([]);
-            return;
-        }
-        setFilteredCourses(courses.filter(course => course.cycle === cycle));
-    }, [courses]);
+    useEffect(() => {
+        let mounted = true;
+
+        getStoredPreferences()
+            .then((state) => {
+                if (!mounted || !state) {
+                    return;
+                }
+                preferencesRef.current = state;
+                if (state.selectedCareer) {
+                    setSelectedCareer(state.selectedCareer);
+                }
+                if (Array.isArray(state.plannedCourseIds)) {
+                    setPlannedCourseIds(state.plannedCourseIds);
+                }
+                if (state.creditLimit !== undefined && state.creditLimit !== null) {
+                    setCreditLimit(state.creditLimit);
+                }
+            })
+            .catch((error) => {
+                console.error('dashboard preferences hydrate error', error);
+            })
+            .finally(() => {
+                if (mounted) {
+                    setHydratedPreferences(true);
+                }
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, [getStoredPreferences]);
 
     const handleCareerChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-        const career = e.target.value;
-        setSelectedCareer(career);
-    }, []);
-
-    useEffect(() => {
-        const statuses: Record<string, CourseStatus> = {};
-        for (const c of courses) statuses[c.id] = c.status;
-        try { localStorage.setItem('eg_statuses', JSON.stringify(statuses)); } catch {}
-    }, [courses]);
-
-    useEffect(() => {
-        try { localStorage.setItem('eg_planned', JSON.stringify(plannedCourseIds)); } catch {}
-    }, [plannedCourseIds]);
-
-    useEffect(() => {
-        try { localStorage.setItem('eg_career', selectedCareer || ''); } catch {}
-    }, [selectedCareer]);
-
-    useEffect(() => {
-        try {
-            if (typeof creditLimit === 'number' && creditLimit > 0) {
-                localStorage.setItem('eg_credit', String(creditLimit));
-            } else {
-                localStorage.removeItem('eg_credit');
-            }
-        } catch {}
-    }, [creditLimit]);
+        const nextCareer = dashboardFilters.selectCareer({
+            currentCareer: selectedCareer,
+            nextCareer: e.target.value,
+        });
+        setSelectedCareer(nextCareer);
+    }, [dashboardFilters, selectedCareer]);
 
     const handleSelectCycle = useCallback((cycle: number | null) => {
-        setSelectedCycle(cycle);
-        updateFilteredCourses(cycle);
-    }, [updateFilteredCourses]);
+        const result = dashboardFilters.selectCycle({
+            courses,
+            cycle,
+            plannedCourseIds,
+        });
+        setSelectedCycle(result.selectedCycle);
+        setFilteredCourses(result.filteredCourses);
+    }, [courses, dashboardFilters, plannedCourseIds]);
 
     const toggleCycle = useCallback((cycle: number) => {
-        setExpandedCycles(prev =>
-            prev.includes(cycle)
-                ? prev.filter(c => c !== cycle)
-                : [...prev, cycle]
-        );
-    }, []);
+        setExpandedCycles(prev => dashboardFilters.toggleCycle({ expandedCycles: prev, cycle }));
+    }, [dashboardFilters]);
 
     const handleCourseSelect = useCallback((courseId: string) => {
-        // Toggle selection
-        const newSelectedId = selectedCourseId === courseId ? null : courseId;
-        setSelectedCourseId(newSelectedId);
+        const result = dashboardFilters.selectCourse({
+            courses,
+            courseId,
+            currentSelectedCourseId: selectedCourseId,
+            currentSelectedCycle: selectedCycle,
+            expandedCycles,
+            plannedCourseIds,
+            cycle: selectedCycle,
+        });
 
-        // Find the selected course
-        const course = courses.find(c => c.id === courseId);
-        if (course) {
-            // Update the selected cycle to the course's cycle
-            setSelectedCycle(course.cycle);
-            // Ensure the cycle is expanded
-            setExpandedCycles(prev =>
-                prev.includes(course.cycle) ? prev : [...prev, course.cycle]
-            );
+        setSelectedCourseId(result.selectedCourseId);
+        setSelectedCycle(result.selectedCycle);
+        setExpandedCycles(result.expandedCycles);
+        setFilteredCourses(result.filteredCourses);
+    }, [courses, dashboardFilters, expandedCycles, plannedCourseIds, selectedCourseId, selectedCycle]);
+
+    const handleLogout = useCallback(async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('logout error', error);
         }
 
-        // Update filtered courses based on the selection
-        if (newSelectedId) {
-            updateFilteredCourses(course?.cycle || null);
-        } else {
-            updateFilteredCourses(null);
+        try {
+            clearAuthToken();
+            await clearPreferences();
+        } catch (error) {
+            console.error('clear dashboard preferences error', error);
         }
-    }, [selectedCourseId, updateFilteredCourses, courses]);
 
-    const handleLogout = useCallback(() => {
         router.push('/');
-    }, [router]);
+    }, [clearPreferences, router, signOut]);
 
     const handleClearFilters = useCallback(() => {
         setSelectedCycle(null);
@@ -149,50 +193,70 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
 
     const updateCourseStatus = useCallback((courseId: string, status: CourseStatus) => {
         setCourses(prevCourses => {
-            const map = new Map(prevCourses.map(c => [c.id, c] as const));
-            const target = map.get(courseId);
-            if (target && status === 'approved') {
-                const approvedSet = new Set(prevCourses.filter(c => c.status === 'approved').map(c => c.id));
-                const ok = (target.prerequisites || []).every(p => approvedSet.has(p));
-                if (!ok) {
-                    setSelectionError(`No se puede aprobar ${courseId} sin prerrequisitos aprobados`);
-                    return prevCourses;
-                }
+            const result = updateCourseStatusUseCase({
+                courses: prevCourses,
+                courseId,
+                status,
+                plannerOptions:
+                    typeof creditLimit === 'number' && creditLimit > 0
+                        ? { maxCreditsPerCycle: creditLimit }
+                        : undefined,
+            });
+
+            if (result.error) {
+                setSelectionError(result.error);
+                return prevCourses;
             }
-            return prevCourses.map(course => course.id === courseId ? { ...course, status } : course);
+
+            setSelectionError('');
+            return result.courses;
         });
-    }, []);
+    }, [creditLimit, updateCourseStatusUseCase]);
 
     const toggleCourseStatus = useCallback((courseId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         const course = courses.find(c => c.id === courseId);
         if (!course) return;
 
-        const statusMap: Record<CourseStatus, CourseStatus> = {
-            'not_taken': 'approved',
-            'approved': 'failed',
-            'failed': 'not_taken'
-        };
+        setCourses((prevCourses) => {
+            const result = toggleCourseStatusUseCase({
+                courses: prevCourses,
+                courseId,
+                currentStatus: course.status || 'not_taken',
+            });
 
-        updateCourseStatus(courseId, statusMap[course.status || 'not_taken']);
-    }, [courses, updateCourseStatus]);
+            if (result.error) {
+                setSelectionError(result.error);
+                return prevCourses;
+            }
+
+            setSelectionError('');
+            return result.courses;
+        });
+    }, [courses, toggleCourseStatusUseCase]);
 
     const togglePlannedCourse = useCallback((courseId: string) => {
-        setPlannedCourseIds(prev => {
-            if (prev.includes(courseId)) {
-                return prev.filter(id => id !== courseId);
-            }
-            const course = courses.find(c => c.id === courseId);
-            if (!course) return prev;
-            const approvedSet = new Set(courses.filter(c => c.status === 'approved').map(c => c.id));
-            const ok = (course.prerequisites || []).every(p => approvedSet.has(p));
-            if (!ok) {
-                setSelectionError(`Seleccione primero los prerrequisitos de ${courseId}`);
+        setPlannedCourseIds((prev) => {
+            const course = courses.find((c) => c.id === courseId);
+            if (!course) {
                 return prev;
             }
-            return [...prev, courseId];
+
+            const result = togglePlannedCourseUseCase({
+                courses,
+                plannedCourseIds: prev,
+                courseId,
+            });
+
+            if (result.error) {
+                setSelectionError(result.error);
+                return prev;
+            }
+
+            setSelectionError('');
+            return result.plannedCourseIds;
         });
-    }, [courses]);
+    }, [courses, togglePlannedCourseUseCase]);
 
     const totalPlannedCredits = useMemo(() => {
         if (plannedCourseIds.length === 0) return 0;
@@ -202,28 +266,101 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
 
     const isOverCreditLimit = typeof creditLimit === 'number' ? totalPlannedCredits > creditLimit : false;
 
+    useEffect(() => {
+        if (selectedCycle === null) {
+            setFilteredCourses([]);
+            return;
+        }
+
+        const filtered = dashboardFilters.filterByCycle({
+            courses,
+            cycle: selectedCycle,
+            plannedCourseIds,
+        });
+
+        setFilteredCourses(filtered);
+    }, [courses, dashboardFilters, plannedCourseIds, selectedCycle]);
+
     const setCoursesList = useCallback((list: Course[]) => {
-        const storedStatuses = (() => {
-            try { return JSON.parse(localStorage.getItem('eg_statuses') || '{}') as Record<string, CourseStatus>; } catch { return {}; }
-        })();
-        const storedPlanned = (() => {
-            try { return JSON.parse(localStorage.getItem('eg_planned') || '[]') as string[]; } catch { return []; }
-        })();
-        const storedCareer = localStorage.getItem('eg_career') || '';
-        const storedCredit = localStorage.getItem('eg_credit');
-        const merged = list.map(c => ({ ...c, status: storedStatuses[c.id] || c.status }));
+        const stored = preferencesRef.current;
+        const merged = list.map(course => {
+            const storedStatus = stored?.statuses?.[course.id];
+            return storedStatus ? { ...course, status: storedStatus } : course;
+        });
+
         setCourses(merged);
         setSelectedCycle(null);
         setFilteredCourses([]);
         setExpandedCycles([]);
         setSelectedCourseId(null);
-        setPlannedCourseIds(Array.isArray(storedPlanned) ? storedPlanned.filter(id => merged.some(c => c.id === id)) : []);
-        if (storedCareer) setSelectedCareer(storedCareer);
-        if (storedCredit) {
-            const v = Number(storedCredit);
-            if (Number.isFinite(v) && v > 0) setCreditLimit(v); else setCreditLimit(null);
+        setPlannedCourseIds(prev => {
+            const targetIds = stored?.plannedCourseIds ?? prev;
+            return targetIds.filter(id => merged.some(course => course.id === id));
+        });
+
+        if (stored?.selectedCareer) {
+            setSelectedCareer(stored.selectedCareer);
         }
+
+        if (stored?.creditLimit !== undefined) {
+            setCreditLimit(stored.creditLimit);
+        }
+
+        preferencesRef.current = null;
     }, []);
+
+    useEffect(() => {
+        if (!hydratedPreferences) {
+            return;
+        }
+        if (courses.length) {
+            return;
+        }
+
+        let active = true;
+
+        listCourses()
+            .then((catalogCourses) => {
+                if (!active) {
+                    return;
+                }
+                if (!catalogCourses.length) {
+                    return;
+                }
+                setCoursesList(catalogCourses);
+            })
+            .catch((error) => {
+                console.error('static course catalog load error', error);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [courses.length, hydratedPreferences, listCourses, setCoursesList]);
+
+    useEffect(() => {
+        if (!hydratedPreferences) {
+            return;
+        }
+        if (!courses.length) {
+            return;
+        }
+
+        const persist = async () => {
+            try {
+                await savePreferences({
+                    statuses: deriveStatuses(courses),
+                    plannedCourseIds,
+                    selectedCareer: selectedCareer || null,
+                    creditLimit,
+                });
+            } catch (error) {
+                console.error('dashboard preferences save error', error);
+            }
+        };
+
+        persist();
+    }, [creditLimit, courses, hydratedPreferences, plannedCourseIds, savePreferences, selectedCareer]);
 
     return {
         selectedCycle,
@@ -251,5 +388,7 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
         setCoursesList,
         careers,
         setCreditLimit,
+        statusColors: dashboardFilters.statusColors,
+        statusLabels: dashboardFilters.statusLabels,
     };
 };

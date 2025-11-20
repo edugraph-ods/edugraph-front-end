@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import { CourseStatus } from '../hooks/use-course';
+import type { CourseStatus } from '@/domain/entities/course';
 import { FiCheck, FiX, FiClock } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 
@@ -75,8 +75,6 @@ export const CourseNode = React.memo<CourseNodeProps>(({ id, data, onStatusChang
     }
   })();
 
-  const creditsLabel = data.credits === 1 ? 'crédito' : 'créditos';
-
   const criticalClasses = data.isInCriticalPath
     ? 'border-2 border-yellow-500 shadow-lg ring-2 ring-yellow-300/60 animate-pulse'
     : borderClass;
@@ -104,7 +102,7 @@ export const CourseNode = React.memo<CourseNodeProps>(({ id, data, onStatusChang
                     setShowStatusMenu(!showStatusMenu);
                   }}
                 >
-                  {getIcon(data.status)} {getStatusLabel(data.status)}
+                  {`${getIcon(data.status)} ${getStatusLabel(data.status)}`}
                 </button>
                 {showStatusMenu && (
                   <div className="absolute z-10 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200">
