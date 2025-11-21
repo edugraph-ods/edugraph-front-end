@@ -8,10 +8,11 @@ import type {
   ResetPasswordResponse,
 } from "@/domain/entities/recovery";
 import { requestJson } from "@/infrastructure/http/apiClient";
+import { withPrefix } from "@/infrastructure/http/apiPaths";
 
-const REQUEST_CODE_PATH = "/api/v1/users/recovery-code";
-const VERIFY_CODE_PATH = "/api/v1/users/verify-recovery-code";
-const RESET_PASSWORD_PATH = "/api/v1/users/reset-password";
+const REQUEST_CODE_PATH = withPrefix("/users/recovery-code");
+const VERIFY_CODE_PATH = withPrefix("/users/verify-recovery-code");
+const RESET_PASSWORD_PATH = withPrefix("/users/reset-password");
 
 export const createRecoveryRepository = (): RecoveryRepository => {
   const requestRecoveryCode: RecoveryRepository["requestRecoveryCode"] = async (
