@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { FiUser, FiLogOut, FiDownload, FiUpload } from 'react-icons/fi';
+import { FiUser, FiLogOut, FiDownload, FiUpload, FiSave } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { FiChevronDown } from 'react-icons/fi';
 import LanguageSwitcher from '../LanguageSwitcher';
@@ -13,6 +13,7 @@ interface DashboardHeaderProps {
   onLogout: () => void;
   onExportPdf?: () => void;
   onLoadSavedData?: () => void;
+  onConfirmSelection?: () => void;
 }
 
 interface DecodedTokenPayload {
@@ -35,7 +36,8 @@ const decodePayload = <T,>(token: string): T | null => {
     return null;
   }
 };
-export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData }: DashboardHeaderProps) => {
+
+export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData, onConfirmSelection }: DashboardHeaderProps) => {
   const { t } = useTranslation('dashboard');
   const [headerLogoFailed, setHeaderLogoFailed] = useState(false);
   const { getProfile } = useStudent();
@@ -50,6 +52,10 @@ export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData }: Dash
 
   const handleLoadSavedData = () => {
     onLoadSavedData?.();
+  };
+
+  const handleConfirmSelection = () => {
+    onConfirmSelection?.();
   };
 
   const getUserInfo = (): DecodedTokenPayload | null => {
@@ -110,6 +116,7 @@ export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData }: Dash
       isMounted = false;
     };
   }, [getProfile, t, userInfo]);
+
 
   const tooltipContent = useMemo(() => {
     if (isProfileLoading) {
@@ -203,6 +210,14 @@ export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData }: Dash
             <FiUpload className="h-4 w-4" />
             {t('button.load')}
           </button>
+          <button
+            type="button"
+            onClick={handleConfirmSelection}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 ease-out hover:scale-[1.03] hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary-foreground cursor-pointer"
+          >
+            <FiSave className="h-4 w-4" />
+            {t("button.save")}
+          </button>
           <LanguageSwitcher />
           <ThemeToggle />
           <div className="relative">
@@ -213,7 +228,7 @@ export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData }: Dash
               <FiChevronDown className="group-hover:rotate-180 transition-transform text-muted-foreground" />
             </div>
             <div className="pointer-events-none opacity-0 peer-hover:opacity-100 peer-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 mt-2 w-max z-10">
-              <div className="bg-popover text-popover-foreground border border-border rounded-md shadow-lg">
+              <div className="bg-white text-foreground border border-border rounded-md shadow-lg dark:bg-neutral-900">
                 {tooltipContent}
               </div>
             </div>
