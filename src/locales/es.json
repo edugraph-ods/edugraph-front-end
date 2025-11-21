@@ -61,6 +61,29 @@
     "loading": "Cargando...",
     "redirecting": "Redirigiendo...",
     "ready": "Listo",
+    "progress":{
+      "title":"Progreso académico",
+      "description":"Calcula ciclos, meses y años necesarios según tu plan y límite de créditos.",
+      "button":"Calcular progreso",
+      "button-calculate":"Calculando...",
+      "cycle":"Ciclos",
+      "mounth":"Meses",
+      "year":"Años"
+    },
+    "savePlan":{
+      "title":"Guardar plan",
+      "description":"Asigna un nombre para identificar tu plan y descárgalo como archivo.",
+      "text":"Nombre del plan",
+      "namePlaceholder":"Plan-1",
+      "save":"Plan guardado correctamente.",
+      "lodas":"Plan cargado correctamente.",
+      "errorload":"No se pudo cargar el plan. Verifica el archivo.",
+      "error":"No se pudo guardar el plan.",
+      "button":"Guardar",
+      "cancel":"Cancelar",
+      "load-1":"Plan",
+      "load-2":"cargado"
+    },
     "filters": {
       "title": "Filtros",
       "career": "Carrera",
