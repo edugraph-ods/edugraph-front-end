@@ -55,6 +55,29 @@
     "loading": "Loading...",
     "redirecting": "Redirecting...",
     "ready": "Ready",
+    "progress":{
+      "title":"Academic Progress",
+      "description":"Calculate the cycles, months, and years needed based on your plan and credit limit.",
+      "button":"Calculate Progress",
+      "button-calculate":"Calculating...",
+      "cycle":"Cycles",
+      "month":"Months",
+      "year":"Years"
+    },
+    "savePlan":{
+      "title":"Save Plan",
+      "description":"Give your plan a name to identify it and download it as a file.",
+      "text":"Plan Name",
+      "namePlaceholder":"Plan-1",
+      "save": "Plan saved successfully.",
+      "lodas": "Plan loaded successfully.",
+      "errorload":"The plan could not be loaded. Please check the file.",
+      "error": "Plan could not be saved.",
+      "button": "Save",
+      "cancel": "Cancel",
+      "load-1": "Plan",
+      "load-2" :"Loaded"
+    },
     "filters": {
       "title": "Filters",
       "career": "Career",

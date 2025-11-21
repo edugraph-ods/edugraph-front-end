@@ -6,10 +6,6 @@ import {
 } from "../CourseNode";
 import type { CourseStatus } from "./types";
 
-/**
- * Helper to create the node types mapping for ReactFlow. We keep this as a factory
- * so the `onStatusChange` callback can be captured.
- */
 export const createNodeTypes = (
   onStatusChange: (courseId: string, status: CourseStatus) => void
 ) => {
