@@ -2,10 +2,8 @@ import type { UniversityRepository } from "@/domain/repositories/UniversityRepos
 import type { University } from "@/domain/entities/university";
 import type { Career } from "@/domain/entities/career";
 import { getJson } from "@/infrastructure/http/apiClient";
+import { PATH_UNIVERSITIES, buildUniversityCareersPath } from "@/infrastructure/http/apiPaths";
 
-const UNIVERSITIES_PATH = "/api/v1/universities";
-
-// API payload shapes
 interface ApiUniversity {
   id?: unknown;
   name?: unknown;
@@ -36,7 +34,7 @@ const toCareer = (payload: ApiCareer): Career | null => {
 
 export const createUniversityRepository = (): UniversityRepository => {
   const listUniversities: UniversityRepository["listUniversities"] = async () => {
-    const response = await getJson<unknown>(UNIVERSITIES_PATH);
+    const response = await getJson<unknown>(PATH_UNIVERSITIES);
     return Array.isArray(response)
       ? response
           .map((item) => (typeof item === "object" && item !== null ? toUniversity(item as ApiUniversity) : null))
@@ -47,7 +45,7 @@ export const createUniversityRepository = (): UniversityRepository => {
   const listCareersByUniversity: UniversityRepository["listCareersByUniversity"] = async (
     universityId: string
   ) => {
-    const response = await getJson<unknown>(`${UNIVERSITIES_PATH}/${encodeURIComponent(universityId)}/careers`);
+    const response = await getJson<unknown>(buildUniversityCareersPath(universityId));
     return Array.isArray(response)
       ? response
           .map((item) => (typeof item === "object" && item !== null ? toCareer(item as ApiCareer) : null))

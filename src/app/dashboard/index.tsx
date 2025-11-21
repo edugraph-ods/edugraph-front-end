@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { FiChevronDown, FiChevronUp, FiSave, FiTrash2 } from "react-icons/fi";
 import type { Course, CourseStatus } from "@/domain/entities/course";
 import { useDashboard } from "@/hooks/useDashboard";
-import { useGraph } from "@/presentation/hooks/useGraph";
 import type { PlanResult } from "@/domain/entities/graph";
 import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -13,6 +12,12 @@ import { useUniversity } from "@/presentation/hooks/useUniversity";
 import type { University } from "@/domain/entities/university";
 import type { Career as ApiCareer } from "@/domain/entities/career";
 import { useCareer } from "@/presentation/hooks/useCareer";
+import type {
+  AcademicProgressRequest,
+  AcademicProgressResponse,
+  BackendCourseStatus,
+  ProgressCourseInput,
+} from "@/domain/entities/progress";
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph"), {
   ssr: false,
@@ -20,14 +25,13 @@ const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph")
 
 export default function Dashboard() {
   const { t } = useTranslation('dashboard');
-  const { ingest, getCourses, detectCycles, generatePlan } = useGraph();
   const [planResult, setPlanResult] = useState<PlanResult | null>(null);
   const [planError, setPlanError] = useState<string>("");
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("");
   const { listUniversities, listCareersByUniversity } = useUniversity();
-  const { listCoursesByCareer } = useCareer();
+  const { listCoursesByCareer, calculateAcademicProgress } = useCareer();
   const [universities, setUniversities] = useState<University[]>([]);
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
   const [careerOptions, setCareerOptions] = useState<{ id: string; name: string }[]>([]);
@@ -117,6 +121,61 @@ export default function Dashboard() {
     return selectedCareer ? courses.filter((c: Course) => c.career === selectedCareer) : courses;
   }, [courses, selectedCareer]);
 
+  const [progressLoading, setProgressLoading] = useState(false);
+  const [progressError, setProgressError] = useState<string>("");
+  const [progressResult, setProgressResult] = useState<AcademicProgressResponse | null>(null);
+  const [progressWarnings, setProgressWarnings] = useState<string[]>([]);
+
+  const buildProgressPayloadPure = useCallback((): { payload: AcademicProgressRequest; warnings: string[] } => {
+    const grouped: Record<number, { cycle: number; courses: ProgressCourseInput[] }> = {};
+    const warnings: string[] = [];
+    const allIds = new Set(coursesByCareer.map(c => c.id));
+    for (const c of coursesByCareer) {
+      const status: BackendCourseStatus =
+        c.status === "approved" ? "PASSED" : c.status === "failed" ? "FAILED" : "NOT_STARTED";
+      const cycleNum = Number.isFinite(c.cycle) ? c.cycle : 0;
+      if (!grouped[cycleNum]) grouped[cycleNum] = { cycle: cycleNum, courses: [] };
+      const validCredits = Number(c.credits) || 0;
+      if (validCredits <= 0) warnings.push(`Curso ${c.id} tiene créditos <= 0`);
+      const prereqs = (Array.isArray(c.prerequisites) ? c.prerequisites : []).filter((p) => allIds.has(p));
+      const missing = (Array.isArray(c.prerequisites) ? c.prerequisites : []).filter(p => !allIds.has(p));
+      if (missing.length) warnings.push(`Curso ${c.id} tiene prerrequisitos inexistentes: ${missing.join(', ')}`);
+      grouped[cycleNum].courses.push({
+        id: c.id,
+        name: c.name,
+        credits: validCredits,
+        prereqs,
+        status,
+      });
+    }
+    const cycles = Object.values(grouped).sort((a, b) => a.cycle - b.cycle);
+    const payload = {
+      max_credits: typeof creditLimit === 'number' && creditLimit > 0 ? creditLimit : 8,
+      cycles,
+    };
+    return { payload, warnings };
+  }, [coursesByCareer, creditLimit]);
+
+  const handleCalculateAcademicProgress = useCallback(async () => {
+    if (!selectedCareer) {
+      setProgressError("Selecciona una carrera para calcular el progreso");
+      return;
+    }
+    setProgressLoading(true);
+    setProgressError("");
+    setProgressResult(null);
+    try {
+      const { payload, warnings } = buildProgressPayloadPure();
+      setProgressWarnings(warnings);
+      const res = await calculateAcademicProgress(selectedCareer, payload);
+      setProgressResult(res);
+    } catch (e) {
+      setProgressError(e instanceof Error ? e.message : "Unexpected error");
+    } finally {
+      setProgressLoading(false);
+    }
+  }, [selectedCareer, buildProgressPayloadPure, calculateAcademicProgress]);
+
   useEffect(() => {
     let active = true;
     const run = async () => {
@@ -187,52 +246,18 @@ export default function Dashboard() {
   const handleConfirmSelection = useCallback(async () => {
     try {
       setPlanError("");
-      const result = await generatePlan({
-        courses,
-        plannedCourseIds,
-        creditLimit,
-        algorithm: selectedAlgorithm || undefined,
-      });
-      console.debug("plan result", result);
-      setPlanResult(result);
+      setPlanResult(null);
     } catch (e) {
-      console.error("plan error", e);
       setPlanError(e instanceof Error ? e.message : "Unexpected error");
     }
-  }, [courses, plannedCourseIds, creditLimit, generatePlan, selectedAlgorithm]);
+  }, []);
 
   const handleResetDashboard = useCallback(() => {
     handleClearFilters();
     setPlanResult(null);
   }, [handleClearFilters]);
 
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const ingested = await ingest({});
-        console.log("ingest response", ingested?.length ?? 0);
-        const coursesResp = await getCourses();
-        console.log("courses response", coursesResp?.length ?? 0);
-        const mapped: Course[] = (coursesResp || []).map((course) => ({
-          id: course.code,
-          name: course.name,
-          credits: course.credits,
-          cycle: course.cycle,
-          prerequisites: course.prerequisites || [],
-          status: "not_taken",
-          career: course.career || undefined,
-          university: course.university || undefined,
-          program: course.program || undefined,
-        }));
-        setCoursesList(mapped);
-        const cyclesResp = await detectCycles();
-        console.log("detect-cycles response", cyclesResp);
-      } catch (err) {
-        console.error("graph api error", err);
-      }
-    };
-    run();
-  }, [ingest, getCourses, detectCycles, setCoursesList]);
+  
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
@@ -242,7 +267,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Column: Filters + Advanced */}
+          {/* Left Column: Filters + Advanced + Academic Progress */}
           <div className="lg:col-span-1 space-y-6">
             {/* Filters Card */}
             <div className="bg-card rounded-lg shadow-sm border border-border">
@@ -437,7 +462,46 @@ export default function Dashboard() {
                   ))}
                 </div>
 
+                {/* Academic Progress Card */}
+                <div className="mt-6 p-4 rounded-md border">
+                  <h3 className="text-sm font-semibold mb-2">Progreso académico</h3>
+                  <p className="text-xs text-muted-foreground mb-3">Calcula ciclos, meses y años necesarios según tu plan y límite de créditos.</p>
+                  <button
+                    onClick={handleCalculateAcademicProgress}
+                    disabled={progressLoading || !selectedCareer}
+                    className={`w-full px-3 py-2 rounded text-sm font-medium transition-all duration-200 ${progressLoading || !selectedCareer ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
+                  >
+                    {progressLoading ? 'Calculando...' : 'Calcular progreso'}
+                  </button>
+                  {progressError && (
+                    <p className="mt-2 text-xs text-red-600">{progressError}</p>
+                  )}
+                  {!!progressWarnings.length && (
+                    <ul className="mt-2 text-xs text-amber-600 list-disc list-inside">
+                      {progressWarnings.map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {progressResult && (
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                      <div className="rounded border p-2">
+                        <div className="text-muted-foreground">Ciclos</div>
+                        <div className="text-base font-semibold">{progressResult.cycles_needed_to_graduate}</div>
+                      </div>
+                      <div className="rounded border p-2">
+                        <div className="text-muted-foreground">Meses</div>
+                        <div className="text-base font-semibold">{progressResult.months_needed_to_graduate}</div>
+                      </div>
+                      <div className="rounded border p-2">
+                        <div className="text-muted-foreground">Años</div>
+                        <div className="text-base font-semibold">{progressResult.years_needed_to_graduate}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+              </div>
               )}
             </div>
 

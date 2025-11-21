@@ -1,11 +1,10 @@
 import type { CareerRepository } from "@/domain/repositories/CareerRepository";
 import type { Career } from "@/domain/entities/career";
 import type { Course } from "@/domain/entities/course";
-import { getJson } from "@/infrastructure/http/apiClient";
+import { getJson, postJson } from "@/infrastructure/http/apiClient";
+import type { AcademicProgressRequest, AcademicProgressResponse } from "@/domain/entities/progress";
+import { PATH_CAREERS, buildCareerCoursesPath, buildCareerProgressPath } from "@/infrastructure/http/apiPaths";
 
-const CAREERS_PATH = "/api/v1/careers";
-
-// API payload shapes
 interface ApiCareer {
   id?: unknown;
   name?: unknown;
@@ -60,7 +59,7 @@ const toCourse = (payload: ApiCourseItem): Course | null => {
 
 export const createCareerRepository = (): CareerRepository => {
   const listCareers: CareerRepository["listCareers"] = async () => {
-    const response = await getJson<unknown>(CAREERS_PATH);
+    const response = await getJson<unknown>(PATH_CAREERS);
     return Array.isArray(response)
       ? response
           .map((item) => (typeof item === "object" && item !== null ? toCareer(item as ApiCareer) : null))
@@ -70,7 +69,7 @@ export const createCareerRepository = (): CareerRepository => {
 
   const listCoursesByCareer: CareerRepository["listCoursesByCareer"] = async (careerId: string) => {
     if (!careerId) return [];
-    const response = await getJson<unknown>(`${CAREERS_PATH}/${encodeURIComponent(careerId)}/courses`);
+    const response = await getJson<unknown>(buildCareerCoursesPath(careerId));
     const data = (typeof response === "object" && response !== null ? (response as ApiCoursesByCareerResponse) : null);
     const cycles = Array.isArray(data?.cycles) ? (data?.cycles as unknown[]) : [];
     const courses: Course[] = [];
@@ -85,8 +84,27 @@ export const createCareerRepository = (): CareerRepository => {
     return courses;
   };
 
+  const calculateAcademicProgress: CareerRepository["calculateAcademicProgress"] = async (
+    careerId: string,
+    payload: AcademicProgressRequest
+  ) => {
+    if (!careerId) throw new Error("careerId is required");
+    const path = buildCareerProgressPath(careerId);
+    const response = await postJson<unknown>(path, payload);
+    const data = typeof response === "object" && response !== null ? (response as Record<string, unknown>) : {};
+    const cycles = Number(data["cycles_needed_to_graduate"] ?? 0);
+    const months = Number(data["months_needed_to_graduate"] ?? 0);
+    const years = Number(data["years_needed_to_graduate"] ?? 0);
+    return {
+      cycles_needed_to_graduate: Number.isFinite(cycles) ? cycles : 0,
+      months_needed_to_graduate: Number.isFinite(months) ? months : 0,
+      years_needed_to_graduate: Number.isFinite(years) ? years : 0,
+    } as AcademicProgressResponse;
+  };
+
   return {
     listCareers,
     listCoursesByCareer,
+    calculateAcademicProgress,
   };
 };
