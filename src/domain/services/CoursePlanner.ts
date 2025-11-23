@@ -77,19 +77,27 @@ export class CoursePlanner {
         "id" in course &&
         "prerequisites" in course;
 
-      if (!isValid) {
-        console.warn("Invalid course data found and will be skipped:", course);
-      }
       return isValid;
     });
-
-    if (validCourses.length === 0 && courses.length > 0) {
-      console.error("No valid courses provided to CoursePlanner");
-    }
 
     this.courses = new Map(validCourses.map((c) => [c.id, { ...c }]));
     this.courseIds = validCourses.map((c) => c.id);
     this.courseIndices = new Map(validCourses.map((c, i) => [c.id, i]));
+
+    const codeToId = new Map<string, string>();
+    for (const c of validCourses) {
+      const idKey = (c.id || "").toString().trim().toLowerCase();
+      if (idKey) codeToId.set(idKey, c.id);
+      const codeKey = (c as unknown as { code?: unknown })?.code;
+      if (typeof codeKey === "string" && codeKey.trim().length) {
+        codeToId.set(codeKey.trim().toLowerCase(), c.id);
+      }
+    }
+
+    console.log('CoursePlanner debug - code to ID mapping:');
+    codeToId.forEach((id, code) => {
+      console.log(`${code} -> ${id}`);
+    });
 
     const sanitizedPrereqs = new Map<string, string[]>();
     validCourses.forEach((course) => {
@@ -106,9 +114,10 @@ export class CoursePlanner {
         }
 
         const normalized = prereqId.toLowerCase();
-        const canonicalId = this.courseIds.find(
-          (id) => id.toLowerCase() === normalized
-        );
+        let canonicalId = this.courseIds.find((id) => id.toLowerCase() === normalized) || null;
+        if (!canonicalId) {
+          canonicalId = codeToId.get(normalized) ?? null;
+        }
         if (!canonicalId) {
           console.warn(
             `Se eliminó el prerrequisito desconocido ${prereqId} del curso ${course.id}`
@@ -121,6 +130,21 @@ export class CoursePlanner {
             `Se eliminó el prerrequisito circular ${canonicalId} del curso ${course.id}`
           );
           return;
+        }
+
+        const prereqCourse = this.courses.get(canonicalId);
+        if (!prereqCourse) {
+          return;
+        }
+        if (prereqCourse.cycle > course.cycle) {
+          return;
+        }
+        if (prereqCourse.cycle === course.cycle) {
+          const a = canonicalId.toLowerCase();
+          const b = course.id.toLowerCase();
+          if (a > b) {
+            return;
+          }
         }
 
         if (seen.has(canonicalId)) return;

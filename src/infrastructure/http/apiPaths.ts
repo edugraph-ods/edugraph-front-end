@@ -59,6 +59,10 @@ const CAREER_COURSES_TEMPLATE = pathFromEnv(
   process.env.NEXT_PUBLIC_PATH_CAREERS_COURSES,
   withPrefix("/careers/{career_id}/courses")
 );
+const CAREER_MIN_PREREQS_TEMPLATE = pathFromEnv(
+  process.env.NEXT_PUBLIC_PATH_CAREERS_MIN_PREREQS,
+  withPrefix("/careers/{career_id}/courses/{course_id}/min_prerequisites")
+);
 const CAREER_PROGRESS_TEMPLATE = pathFromEnv(
   process.env.NEXT_PUBLIC_PATH_CAREERS_PROGRESS,
   withPrefix("/careers/{career_id}/progress")
@@ -66,6 +70,11 @@ const CAREER_PROGRESS_TEMPLATE = pathFromEnv(
 export const buildCareerCoursesPath = (careerId: string) =>
   replaceTokens(CAREER_COURSES_TEMPLATE, {
     career_id: encodeURIComponent(careerId),
+  });
+export const buildCareerMinPrereqsPath = (careerId: string, courseId: string) =>
+  replaceTokens(CAREER_MIN_PREREQS_TEMPLATE, {
+    career_id: encodeURIComponent(careerId),
+    course_id: encodeURIComponent(courseId),
   });
 export const buildCareerProgressPath = (careerId: string) =>
   replaceTokens(CAREER_PROGRESS_TEMPLATE, {

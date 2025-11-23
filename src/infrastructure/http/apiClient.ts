@@ -136,6 +136,57 @@ export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
   return {} as T;
 };
 
+export const getJsonPublic = async <T>(path: string, init?: JsonInit): Promise<T> => {
+  const url = buildUrl(path);
+  console.debug("GET (public)", url, "headers:", init?.headers);
+  
+  try {
+    const response = await fetch(buildUrl(path), {
+      method: init?.method ?? "GET",
+      headers: {
+        Accept: "application/json",
+        ...(init?.headers ?? {}),
+      },
+      credentials: "omit", 
+    });
+    
+    console.debug("Response status:", response.status, response.statusText);
+    console.debug("Response headers:", Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const message = await buildErrorMessage(response, init?.method ?? "GET", url);
+      throw new Error(message);
+    }
+    if (response.status === 204) return {} as T;
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      return (await response.json()) as T;
+    }
+    return {} as T;
+  } catch (error) {
+    console.error("Public fetch failed, trying with timeout:", error);
+    const response = await fetchWithTimeout(buildUrl(path), {
+      method: init?.method ?? "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+    console.debug("Fallback response status:", response.status, response.statusText);
+    if (!response.ok) {
+      const message = await buildErrorMessage(response, init?.method ?? "GET", url);
+      throw new Error(message);
+    }
+    if (response.status === 204) return {} as T;
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      return (await response.json()) as T;
+    }
+    return {} as T;
+  }
+};
+
 export const requestJson = async <T>(
   path: string,
   body: unknown,
