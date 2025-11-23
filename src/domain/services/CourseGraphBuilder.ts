@@ -30,9 +30,50 @@ export class CourseGraphBuilder {
     const criticalPath = planner.getCriticalPath();
     const criticalPathSet = new Set(criticalPath);
 
-    const positions = this.calculatePositions(plannedCourses);
-    const nodes = this.createNodes(plannedCourses, positions, criticalPathSet);
+    const codeToId = new Map<string, string>();
+    for (const c of plannedCourses) {
+      const idKey = (c.id || '').toString().trim().toLowerCase();
+      if (idKey) codeToId.set(idKey, c.id);
+      const code = (c as unknown as { code?: string }).code;
+      if (typeof code === 'string' && code.trim().length) {
+        codeToId.set(code.trim().toLowerCase(), c.id);
+      }
+    }
+    const sanitized = plannedCourses.map((c) => {
+      const next: Course = { ...c };
+      const seen = new Set<string>();
+      const out: string[] = [];
+      const raw = Array.isArray(c.prerequisites) ? c.prerequisites : [];
+      for (const r of raw) {
+        const key = typeof r === 'string' ? r.trim().toLowerCase() : String(r ?? '').trim().toLowerCase();
+        if (!key) continue;
+        let resolved = codeToId.get(key) || null;
+        if (!resolved) {
+          resolved = plannedCourses.find((pc) => pc.id === (r as string))?.id || null;
+        }
+        if (!resolved) continue;
+        if (resolved === c.id) continue; 
+        if (seen.has(resolved)) continue;
+        seen.add(resolved);
+        out.push(resolved);
+      }
+      next.prerequisites = out;
+      return next;
+    });
+
+    console.log('CourseGraphBuilder debug - planned courses with prerequisites (sanitized):');
+    sanitized.forEach(course => {
+      console.log(`${course.name} (${course.id}): prerequisites =`, course.prerequisites);
+    });
+
+    const positions = this.calculatePositions(sanitized);
+    const nodes = this.createNodes(sanitized, positions, criticalPathSet);
     const edges = this.createEdges(nodes, criticalPathSet);
+
+    console.log('CourseGraphBuilder debug - created edges:');
+    edges.forEach(edge => {
+      console.log(`${edge.source} -> ${edge.target}`);
+    });
 
     return {
       nodes,
@@ -43,35 +84,37 @@ export class CourseGraphBuilder {
 
   private calculatePositions(courses: Course[]): Map<string, Position> {
     const positions = new Map<string, Position>();
-    if (!courses.length) {
-      return positions;
+    const coursesByCycle = new Map<number, Course[]>();
+    
+    for (const course of courses) {
+      const cycle = course.cycle || 0;
+      if (coursesByCycle.has(cycle)) {
+        coursesByCycle.get(cycle)!.push(course);
+      } else {
+        coursesByCycle.set(cycle, [course]);
+      }
     }
 
-    const cycles = Array.from(new Set(courses.map((course) => course.cycle))).sort(
-      (a, b) => a - b
-    );
-    const coursesByCycle = new Map<number, Course[]>(
-      cycles.map((cycle) => [cycle, []])
-    );
-
-    courses.forEach((course) => {
-      const group = coursesByCycle.get(course.cycle);
-      if (group) {
-        group.push(course);
-      } else {
-        coursesByCycle.set(course.cycle, [course]);
-      }
-    });
+    const cycles = Array.from(coursesByCycle.keys()).sort((a, b) => a - b);
 
     cycles.forEach((cycle, cycleIndex) => {
-      const items = coursesByCycle.get(cycle) ?? [];
+      const items = coursesByCycle.get(cycle) || [];
+      
       items.sort((a, b) => {
+        const prereqCountA = (a.prerequisites || []).length;
+        const prereqCountB = (b.prerequisites || []).length;
+        
+        if (prereqCountA !== prereqCountB) {
+          return prereqCountA - prereqCountB;
+        }
+        
         const outgoingA = courses.filter((course) =>
           (course.prerequisites || []).includes(a.id)
         ).length;
         const outgoingB = courses.filter((course) =>
           (course.prerequisites || []).includes(b.id)
         ).length;
+        
         return outgoingB - outgoingA;
       });
 

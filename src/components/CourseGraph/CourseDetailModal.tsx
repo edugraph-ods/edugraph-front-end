@@ -155,18 +155,46 @@ export const CourseDetailModal: React.FC<DetailModalProps> = ({
   const effectivePrereqs = Array.isArray(apiCourse?.prerequisites)
     ? apiCourse!.prerequisites
     : prerequisiteIds;
-  const prereqLabels = effectivePrereqs.map((id: string) => {
+  console.log('CourseDetailModal debug', {
+    courseId: detailCourseId,
+    apiCourse,
+    apiPrereqs: apiCourse?.prerequisites,
+    nodePrereqIds: prerequisiteIds,
+    effectivePrereqs,
+  });
+  const normalize = (s: unknown) =>
+    typeof s === "string" ? s.trim().toUpperCase() : String(s ?? "").trim().toUpperCase();
+  const seen = new Set<string>();
+  const uniquePrereqRaw: string[] = [];
+  for (const item of effectivePrereqs) {
+    const key = normalize(item);
+    if (!key) continue;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniquePrereqRaw.push(typeof item === "string" ? item : String(item));
+    }
+  }
+  const prereqLabels = uniquePrereqRaw.map((raw: string) => {
+    const key = normalize(raw);
     const match =
-      scheduleCourses.find((c) => c.id === id) ||
-      courses.find((c) => c.id === id);
-    return match?.name || id;
+      scheduleCourses.find((c) => normalize(c.id) === key) ||
+      courses.find((c) => normalize(c.id) === key) ||
+      scheduleCourses.find((c) => normalize((c as { code?: string }).code) === key) ||
+      courses.find((c) => normalize((c as { code?: string }).code) === key);
+    return match?.name || raw;
   });
 
   const dependentLabels = nodes
     .filter((n) => {
       const data = (n.data || {}) as NodeDataShape;
       const deps = Array.isArray(data.prerequisites) ? data.prerequisites : [];
-      return deps.includes(detailCourseId);
+      const currentCourseId = normalize(detailCourseId);
+      const currentCourseCode = normalize(course?.code || apiCourse?.code || course.id);
+      
+      return deps.some(dep => {
+        const normalizedDep = normalize(dep);
+        return normalizedDep === currentCourseId || normalizedDep === currentCourseCode;
+      });
     })
     .map((n) => {
       const match =
@@ -215,7 +243,7 @@ export const CourseDetailModal: React.FC<DetailModalProps> = ({
           </div>
           <div className="col-span-2">
             <p className="text-muted-foreground">{t("course.code")}</p>
-            <p className="font-medium text-foreground">{apiCourse?.code || course.id}</p>
+            <p className="font-medium text-foreground">{apiCourse?.code || course.code || course.id}</p>
           </div>
           <div className="col-span-2">
             <p className="text-muted-foreground">{t("course.career")}</p>

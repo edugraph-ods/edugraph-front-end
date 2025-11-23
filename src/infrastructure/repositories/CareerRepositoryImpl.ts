@@ -1,9 +1,10 @@
 import type { CareerRepository } from "@/domain/repositories/CareerRepository";
 import type { Career } from "@/domain/entities/career";
 import type { Course } from "@/domain/entities/course";
-import { getJson, postJson } from "@/infrastructure/http/apiClient";
 import type { AcademicProgressRequest, AcademicProgressResponse } from "@/domain/entities/progress";
-import { PATH_CAREERS, buildCareerCoursesPath, buildCareerProgressPath } from "@/infrastructure/http/apiPaths";
+import { CoursePlanner } from "@/domain/services/CoursePlanner";
+import { getJson, postJson } from "@/infrastructure/http/apiClient";
+import { PATH_CAREERS, buildCareerCoursesPath, buildCareerProgressPath, buildCareerMinPrereqsPath } from "@/infrastructure/http/apiPaths";
 
 interface ApiCareer {
   id?: unknown;
@@ -41,6 +42,7 @@ const toCareer = (payload: ApiCareer): Career | null => {
 const toCourse = (payload: ApiCourseItem): Course | null => {
   const id = typeof payload?.id === "string" ? payload.id : null;
   const name = typeof payload?.name === "string" ? payload.name : null;
+  const code = typeof payload?.code === "string" ? payload.code : null;
   const cycle = typeof payload?.cycle === "number" ? payload.cycle : Number(payload?.cycle ?? 0);
   const credits = typeof payload?.credits === "number" ? payload.credits : Number(payload?.credits ?? 0);
   const prereqs = Array.isArray(payload?.prereqs)
@@ -50,6 +52,7 @@ const toCourse = (payload: ApiCourseItem): Course | null => {
   return {
     id,
     name,
+    code: code || id,
     credits: Number.isFinite(credits) ? credits : 0,
     cycle: Number.isFinite(cycle) ? cycle : 0,
     prerequisites: prereqs,
@@ -81,6 +84,12 @@ export const createCareerRepository = (): CareerRepository => {
         if (mapped) courses.push({ ...mapped, career: careerId });
       }
     }
+
+    if (courses.length > 0) {
+      const planner = new CoursePlanner(courses);
+      return planner.getCourses();
+    }
+    
     return courses;
   };
 
@@ -102,9 +111,34 @@ export const createCareerRepository = (): CareerRepository => {
     } as AcademicProgressResponse;
   };
 
+  const getMinPrerequisites: CareerRepository["getMinPrerequisites"] = async (
+    careerId: string,
+    courseId: string
+  ) => {
+    if (!careerId) throw new Error("careerId is required");
+    if (!courseId) throw new Error("courseId is required");
+    const path = buildCareerMinPrereqsPath(careerId, courseId);
+    const response = await getJson<unknown>(path);
+    const data = typeof response === "object" && response !== null ? (response as Record<string, unknown>) : {};
+    const course_id = typeof data["course_id"] === "string" ? data["course_id"] : courseId;
+    const min_courses_required = Number(data["min_courses_required"] ?? 0) || 0;
+    const listRaw = Array.isArray(data["courses_in_order"]) ? (data["courses_in_order"] as unknown[]) : [];
+    const courses_in_order = listRaw
+      .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>) : null))
+      .filter((v): v is Record<string, unknown> => v !== null)
+      .map((v) => ({
+        id: typeof v.id === "string" ? v.id : "",
+        name: typeof v.name === "string" ? v.name : "",
+        code: typeof v.code === "string" ? v.code : "",
+      }));
+
+    return { course_id, min_courses_required, courses_in_order };
+  };
+
   return {
     listCareers,
     listCoursesByCareer,
     calculateAcademicProgress,
+    getMinPrerequisites,
   };
 };

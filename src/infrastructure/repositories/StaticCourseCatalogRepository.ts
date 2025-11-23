@@ -5,6 +5,7 @@ const COURSES: Course[] = [
   {
     id: "MAT101",
     name: "Matemática Básica",
+    code: "MAT101",
     credits: 4,
     cycle: 1,
     prerequisites: [],
@@ -14,6 +15,7 @@ const COURSES: Course[] = [
   {
     id: "COM101",
     name: "Comunicación Efectiva",
+    code: "COM101",
     credits: 3,
     cycle: 1,
     prerequisites: [],
@@ -23,6 +25,7 @@ const COURSES: Course[] = [
   {
     id: "FIS101",
     name: "Física General",
+    code: "FIS101",
     credits: 4,
     cycle: 1,
     prerequisites: [],
@@ -31,6 +34,7 @@ const COURSES: Course[] = [
   {
     id: "PROG101",
     name: "Introducción a la Programación",
+    code: "PROG101",
     credits: 4,
     cycle: 1,
     prerequisites: [],
@@ -39,6 +43,7 @@ const COURSES: Course[] = [
   {
     id: "CAL101",
     name: "Cálculo Diferencial",
+    code: "CAL101",
     credits: 4,
     cycle: 2,
     prerequisites: ["MAT101"],
@@ -47,6 +52,7 @@ const COURSES: Course[] = [
   {
     id: "ALG101",
     name: "Álgebra Lineal",
+    code: "ALG101",
     credits: 4,
     cycle: 2,
     prerequisites: ["MAT101"],
@@ -55,6 +61,7 @@ const COURSES: Course[] = [
   {
     id: "PROG102",
     name: "Programación Orientada a Objetos",
+    code: "PROG102",
     credits: 4,
     cycle: 2,
     prerequisites: ["PROG101"],
@@ -63,6 +70,7 @@ const COURSES: Course[] = [
   {
     id: "CAL201",
     name: "Cálculo Integral",
+    code: "CAL201",
     credits: 4,
     cycle: 3,
     prerequisites: ["CAL101"],
@@ -71,6 +79,7 @@ const COURSES: Course[] = [
   {
     id: "EDD101",
     name: "Estructuras de Datos",
+    code: "EDD101",
     credits: 4,
     cycle: 3,
     prerequisites: ["PROG102"],
@@ -79,6 +88,7 @@ const COURSES: Course[] = [
   {
     id: "ARQ101",
     name: "Arquitectura de Computadoras",
+    code: "ARQ101",
     credits: 4,
     cycle: 3,
     prerequisites: ["PROG102"],
@@ -87,6 +97,7 @@ const COURSES: Course[] = [
   {
     id: "EST101",
     name: "Estadística General",
+    code: "EST101",
     credits: 4,
     cycle: 4,
     prerequisites: ["CAL101"],
@@ -95,6 +106,7 @@ const COURSES: Course[] = [
   {
     id: "BD101",
     name: "Bases de Datos",
+    code: "BD101",
     credits: 4,
     cycle: 4,
     prerequisites: ["EDD101"],
@@ -103,6 +115,7 @@ const COURSES: Course[] = [
   {
     id: "RED101",
     name: "Redes de Computadoras",
+    code: "RED101",
     credits: 4,
     cycle: 4,
     prerequisites: ["ARQ101"],
@@ -111,6 +124,7 @@ const COURSES: Course[] = [
   {
     id: "ALG201",
     name: "Algoritmos y Complejidad",
+    code: "ALG201",
     credits: 4,
     cycle: 5,
     prerequisites: ["EDD101", "CAL201"],
@@ -119,6 +133,7 @@ const COURSES: Course[] = [
   {
     id: "SIS101",
     name: "Sistemas Operativos",
+    code: "SIS101",
     credits: 4,
     cycle: 5,
     prerequisites: ["ARQ101", "EDD101"],
@@ -127,6 +142,7 @@ const COURSES: Course[] = [
   {
     id: "ING101",
     name: "Ingeniería de Software I",
+    code: "ING101",
     credits: 4,
     cycle: 5,
     prerequisites: ["PROG102", "BD101"],
@@ -135,6 +151,7 @@ const COURSES: Course[] = [
   {
     id: "IA101",
     name: "Inteligencia Artificial",
+    code: "IA101",
     credits: 4,
     cycle: 6,
     prerequisites: ["ALG201", "EST101"],
@@ -143,6 +160,7 @@ const COURSES: Course[] = [
   {
     id: "WEB101",
     name: "Desarrollo Web Avanzado",
+    code: "WEB101",
     credits: 4,
     cycle: 6,
     prerequisites: ["ING101"],
@@ -151,6 +169,7 @@ const COURSES: Course[] = [
   {
     id: "SEG101",
     name: "Seguridad Informática",
+    code: "SEG101",
     credits: 4,
     cycle: 6,
     prerequisites: ["RED101", "SIS101"],
@@ -159,6 +178,7 @@ const COURSES: Course[] = [
   {
     id: "PROY101",
     name: "Proyecto de Software",
+    code: "PROY101",
     credits: 6,
     cycle: 7,
     prerequisites: ["ING101", "WEB101"],
@@ -167,6 +187,7 @@ const COURSES: Course[] = [
   {
     id: "CLOUD101",
     name: "Computación en la Nube",
+    code: "CLOUD101",
     credits: 4,
     cycle: 7,
     prerequisites: ["SIS101", "RED101"],
@@ -175,6 +196,7 @@ const COURSES: Course[] = [
   {
     id: "ETI101",
     name: "Ética y Legislación en TI",
+    code: "ETI101",
     credits: 3,
     cycle: 8,
     prerequisites: [],
@@ -183,6 +205,7 @@ const COURSES: Course[] = [
   {
     id: "PRAC101",
     name: "Prácticas Pre-Profesionales",
+    code: "PRAC101",
     credits: 6,
     cycle: 8,
     prerequisites: ["PROY101"],
@@ -191,6 +214,7 @@ const COURSES: Course[] = [
   {
     id: "ELECT101",
     name: "Electivo Profesional",
+    code: "ELECT101",
     credits: 4,
     cycle: 8,
     prerequisites: [],

@@ -3,6 +3,7 @@ export type CourseStatus = "approved" | "failed" | "not_taken";
 export interface Course {
   id: string;
   name: string;
+  code: string;
   credits: number;
   cycle: number;
   prerequisites: string[];
