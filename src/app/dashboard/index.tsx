@@ -35,7 +35,7 @@ export default function Dashboard() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("");
   const { listUniversities, listCareersByUniversity } = useUniversity();
-  const { listCoursesByCareer, calculateAcademicProgress } = useCareer();
+  const { listCoursesByCareer, calculateAcademicProgress, getMinPrerequisites } = useCareer();
   const [universities, setUniversities] = useState<University[]>([]);
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
   const [careerOptions, setCareerOptions] = useState<{ id: string; name: string }[]>([]);
@@ -46,6 +46,13 @@ export default function Dashboard() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const importingPlanRef = useRef(false);
   const pendingCareerRef = useRef<string | null>(null);
+  const [minPrereqLoading, setMinPrereqLoading] = useState(false);
+  const [minPrereqError, setMinPrereqError] = useState<string>("");
+  const [minPrereqResult, setMinPrereqResult] = useState<{
+    course_id: string;
+    min_courses_required: number;
+    courses_in_order: Array<{ id: string; name: string; code: string }>;
+  } | null>(null);
 
   const buildDashboardReport = useMemo(() => createBuildDashboardReport(), []);
   const dashboardReportExporter = useMemo(() => createJspdfDashboardReportExporter(), []);
@@ -94,53 +101,13 @@ export default function Dashboard() {
     () => [
       {
         value: "",
-        title: t("filters.algorithmOptions.auto.title", {
-          defaultValue: "Automático",
-        }),
-        description: t("filters.algorithmOptions.auto.description", {
-          defaultValue:
-            "Deja que la plataforma elija el método más adecuado según tu selección.",
-        }),
+        title: t("advanced.dynamic"),
+        description: t("advanced.dynamic-description"),
       },
       {
-        value: "greedy",
-        title: t("filters.algorithmOptions.greedy.title", {
-          defaultValue: "Greedy",
-        }),
-        description: t("filters.algorithmOptions.greedy.description", {
-          defaultValue:
-            "Prioriza cursos con menor carga primero para liberar prerrequisitos rápidamente.",
-        }),
-      },
-      {
-        value: "critical_path",
-        title: t("filters.algorithmOptions.critical_path.title", {
-          defaultValue: "Ruta crítica",
-        }),
-        description: t("filters.algorithmOptions.critical_path.description", {
-          defaultValue:
-            "Ordena los cursos destacando los que desbloquean más asignaturas en el plan.",
-        }),
-      },
-      {
-        value: "topological",
-        title: t("filters.algorithmOptions.topological.title", {
-          defaultValue: "Topológico",
-        }),
-        description: t("filters.algorithmOptions.topological.description", {
-          defaultValue:
-            "Produce un orden clásico sin ciclos respetando al máximo los prerrequisitos.",
-        }),
-      },
-      {
-        value: "heuristic_v2",
-        title: t("filters.algorithmOptions.heuristic_v2.title", {
-          defaultValue: "Heurístico v2",
-        }),
-        description: t("filters.algorithmOptions.heuristic_v2.description", {
-          defaultValue:
-            "Combina heurísticas de créditos y prerrequisitos para balancear cada ciclo.",
-        }),
+        value: "min_prereqs",
+        title: t("advanced.floyd"),
+        description: t("advanced.floyd-description"),
       },
     ],
     [t]
@@ -218,17 +185,51 @@ export default function Dashboard() {
     setProgressLoading(true);
     setProgressError("");
     setProgressResult(null);
+    setMinPrereqError("");
+    setMinPrereqResult(null);
     try {
-      const { payload, warnings } = buildProgressPayloadPure();
-      setProgressWarnings(warnings);
-      const res = await calculateAcademicProgress(selectedCareer, payload);
-      setProgressResult(res);
+      if (selectedAlgorithm === "min_prereqs") {
+        if (!selectedCourseId) {
+          setProgressError(t("advanced.warning-floyd"));
+          return;
+        }
+        const res = await getMinPrerequisites(selectedCareer, selectedCourseId);
+        setMinPrereqResult(res);
+        setProgressWarnings([]);
+      } else {
+        const { payload, warnings } = buildProgressPayloadPure();
+        setProgressWarnings(warnings);
+        const res = await calculateAcademicProgress(selectedCareer, payload);
+        setProgressResult(res);
+      }
     } catch (e) {
       setProgressError(e instanceof Error ? e.message : "Unexpected error");
     } finally {
       setProgressLoading(false);
     }
-  }, [selectedCareer, buildProgressPayloadPure, calculateAcademicProgress]);
+  }, [selectedCareer, selectedCourseId, selectedAlgorithm, buildProgressPayloadPure, calculateAcademicProgress, getMinPrerequisites, t]);
+
+  const handleGetMinPrereqs = useCallback(async () => {
+    if (!selectedCareer) {
+      setMinPrereqError("Selecciona una carrera");
+      return;
+    }
+    if (!selectedCourseId) {
+      setMinPrereqError("Selecciona un curso en el grafo para consultar");
+      return;
+    }
+    setMinPrereqLoading(true);
+    setMinPrereqError("");
+    setMinPrereqResult(null);
+    try {
+      const res = await getMinPrerequisites(selectedCareer, selectedCourseId);
+      setMinPrereqResult(res);
+    } catch (e) {
+      setMinPrereqError(e instanceof Error ? e.message : "Error inesperado");
+    } finally {
+      setMinPrereqLoading(false);
+    }
+  }, [getMinPrerequisites, selectedCareer, selectedCourseId]);
 
   useEffect(() => {
     let active = true;
@@ -712,14 +713,14 @@ export default function Dashboard() {
                     {progressError && (
                       <p className="mt-2 text-xs text-red-600">{progressError}</p>
                     )}
-                    {!!progressWarnings.length && (
+                    {!!progressWarnings.length && selectedAlgorithm !== 'min_prereqs' && (
                       <ul className="mt-2 text-xs text-amber-600 list-disc list-inside">
                         {progressWarnings.map((w, i) => (
                           <li key={i}>{w}</li>
                         ))}
                       </ul>
                     )}
-                    {progressResult && (
+                    {selectedAlgorithm !== 'min_prereqs' && progressResult && (
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                         <div className="rounded border p-2">
                           <div className="text-muted-foreground">{t("progress.cycle")}</div>
@@ -732,6 +733,28 @@ export default function Dashboard() {
                         <div className="rounded border p-2">
                           <div className="text-muted-foreground">{t("progress.year")}</div>
                           <div className="text-base font-semibold">{progressResult.years_needed_to_graduate}</div>
+                        </div>
+                      </div>
+                    )}
+                    {selectedAlgorithm === 'min_prereqs' && minPrereqResult && (
+                      <div className="mt-3 text-xs space-y-2">
+                        <div className="rounded border p-2">
+                          <div className="text-muted-foreground">{t("advanced.course-floyd")}</div>
+                          <div className="text-base font-semibold">
+                            {coursesByCareer.find(c => c.id === minPrereqResult.course_id)?.name || minPrereqResult.course_id}
+                          </div>
+                        </div>
+                        <div className="rounded border p-2">
+                          <div className="text-muted-foreground">{t("advanced.minium-floyd")}</div>
+                          <div className="text-base font-semibold">{minPrereqResult.min_courses_required}</div>
+                        </div>
+                        <div className="rounded border p-2">
+                          <div className="text-muted-foreground">{t("advanced.sequence-floyd")}</div>
+                          <ol className="list-decimal list-inside mt-1 space-y-0.5">
+                            {minPrereqResult.courses_in_order.map((c) => (
+                              <li key={c.id}>{c.name} ({c.code})</li>
+                            ))}
+                          </ol>
                         </div>
                       </div>
                     )}
@@ -812,6 +835,7 @@ export default function Dashboard() {
                       })}
                     </div>
                   </fieldset>
+
                 </div>
               )}
             </div>

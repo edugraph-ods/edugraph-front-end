@@ -70,11 +70,13 @@ export const CourseList: React.FC<CourseListProps> = ({
                 if (typeof courseCode !== "string") {
                   return null;
                 }
-
-                const node = nodeMap.get(courseCode);
                 const matchedCourse =
                   scheduleCourses.find((sc) => sc.id === courseCode) ||
-                  courses.find((sc) => sc.id === courseCode);
+                  courses.find((sc) => sc.id === courseCode) ||
+                  scheduleCourses.find((sc) => sc.code === courseCode) ||
+                  courses.find((sc) => sc.code === courseCode);
+                const resolvedId = matchedCourse?.id || courseCode;
+                const node = nodeMap.get(resolvedId) || nodeMap.get(courseCode);
 
                 const label = node?.data.label ?? matchedCourse?.name ?? courseCode;
                 const credits = typeof matchedCourse?.credits === 'number' ? matchedCourse!.credits : 0;
@@ -83,11 +85,12 @@ export const CourseList: React.FC<CourseListProps> = ({
                 const prereqs = prereqSource.filter((prereqId): prereqId is string =>
                   typeof prereqId === "string" &&
                   (nodeMap.has(prereqId) ||
-                    scheduleCourses.some((course) => course.id === prereqId))
+                    scheduleCourses.some((course) => course.id === prereqId) ||
+                    scheduleCourses.some((course) => course.code === prereqId))
                 );
 
                 return {
-                  id: courseCode,
+                  id: resolvedId,
                   cycle: cyclePlan.cycle,
                   label,
                   credits,
@@ -179,6 +182,9 @@ export const CourseList: React.FC<CourseListProps> = ({
                                       scheduleCourses.find(
                                         (c) => c.id === prereqId
                                       )?.name ??
+                                      scheduleCourses.find(
+                                        (c) => c.code === prereqId
+                                      )?.name ??
                                       prereqId}
                                   </span>
                                 )
@@ -219,7 +225,10 @@ export const CourseList: React.FC<CourseListProps> = ({
       n?.data.prerequisites ??
       c.prerequisites ??
       []
-    ).filter((p: string) => scheduleCourses.some((sc) => sc.id === p));
+    ).filter((p: string) => 
+      scheduleCourses.some((sc) => sc.id === p) ||
+      scheduleCourses.some((sc) => sc.code === p)
+    );
     return {
       id: c.id,
       cycle: c.cycle,
@@ -327,6 +336,8 @@ export const CourseList: React.FC<CourseListProps> = ({
                           >
                             {nodeMap.get(prereqId)?.data.label ??
                               scheduleCourses.find((c) => c.id === prereqId)
+                                ?.name ??
+                              scheduleCourses.find((c) => c.code === prereqId)
                                 ?.name ??
                               prereqId}
                           </span>

@@ -154,11 +154,11 @@ export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData, onConf
         <p className="text-sm font-semibold text-foreground">
           {displayName}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground break-words">
+        <p className="mt-1 text-xs text-muted-foreground wrap-break-word">
           {displayEmail}
         </p>
         {displayUniversity ? (
-          <p className="mt-2 text-xs text-muted-foreground break-words">
+          <p className="mt-2 text-xs text-muted-foreground wrap-break-word">
             {displayUniversity}
           </p>
         ) : null}
