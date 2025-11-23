@@ -11,12 +11,12 @@ export const createAuthRepository = (): AuthRepository => {
   });
 
   const signIn: AuthRepository["signIn"] = async (input: SignInInput) => {
-    const response = await requestJson<unknown>(PATH_SIGN_IN, input);
+    const response = await requestJson<unknown>(PATH_SIGN_IN(), input);
     return toAuthSession(response);
   };
 
   const signUp: AuthRepository["signUp"] = async (input: SignUpInput) => {
-    const response = await requestJson<unknown>(PATH_SIGN_UP, input);
+    const response = await requestJson<unknown>(PATH_SIGN_UP(), input);
     return toAuthSession(response);
   };
 

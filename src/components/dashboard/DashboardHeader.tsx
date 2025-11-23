@@ -228,7 +228,7 @@ export const DashboardHeader = ({ onLogout, onExportPdf, onLoadSavedData, onConf
               <FiChevronDown className="group-hover:rotate-180 transition-transform text-muted-foreground" />
             </div>
             <div className="pointer-events-none opacity-0 peer-hover:opacity-100 peer-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 mt-2 w-max z-10">
-              <div className="bg-white text-foreground border border-border rounded-md shadow-lg dark:bg-neutral-900">
+              <div className="bg-card text-card-foreground border border-border rounded-md shadow-lg">
                 {tooltipContent}
               </div>
             </div>
