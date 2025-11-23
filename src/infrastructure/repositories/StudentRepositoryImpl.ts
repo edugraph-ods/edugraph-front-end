@@ -1,8 +1,7 @@
 import type { StudentRepository } from "@/domain/repositories/StudentRepository";
 import type { StudentProfile } from "@/domain/entities/student";
 import { getJson } from "@/infrastructure/http/apiClient";
-
-const STUDENT_PROFILE_PATH = "/api/v1/students/me";
+import { PATH_STUDENTS_ME } from "@/infrastructure/http/apiPaths";
 
 type ApiStudentProfile = {
   name?: unknown;
@@ -21,7 +20,7 @@ const toStudentProfile = (payload: ApiStudentProfile | null | undefined): Studen
 
 export const createStudentRepository = (): StudentRepository => {
   const getProfile: StudentRepository["getProfile"] = async () => {
-    const response = await getJson<ApiStudentProfile>(STUDENT_PROFILE_PATH);
+    const response = await getJson<ApiStudentProfile>(PATH_STUDENTS_ME);
     return toStudentProfile(response);
   };
 

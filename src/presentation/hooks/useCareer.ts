@@ -2,12 +2,17 @@ import { useMemo } from "react";
 import { createCareerRepository } from "@/infrastructure/repositories/CareerRepositoryImpl";
 import { createListCareers } from "@/application/useCases/career/createListCareers";
 import { createListCoursesByCareer } from "@/application/useCases/career/createListCoursesByCareer";
+import { createGetMinPrerequisites } from "@/application/useCases/career/createGetMinPrerequisites";
+import { createCalculateAcademicProgress } from "@/application/useCases/career/createCalculateAcademicProgress";
 import type { Career } from "@/domain/entities/career";
 import type { Course } from "@/domain/entities/course";
+import type { AcademicProgressRequest, AcademicProgressResponse } from "@/domain/entities/progress";
 
 interface UseCareerApi {
   listCareers(): Promise<Career[]>;
   listCoursesByCareer(careerId: string): Promise<Course[]>;
+  calculateAcademicProgress(careerId: string, payload: AcademicProgressRequest): Promise<AcademicProgressResponse>;
+  getMinPrerequisites(careerId: string, courseId: string): ReturnType<ReturnType<typeof createGetMinPrerequisites>>;
 }
 
 export const useCareer = (): UseCareerApi => {
@@ -16,7 +21,9 @@ export const useCareer = (): UseCareerApi => {
   const api = useMemo(() => {
     const listCareers = createListCareers(repository);
     const listCoursesByCareer = createListCoursesByCareer(repository);
-    return { listCareers, listCoursesByCareer } satisfies UseCareerApi;
+    const calculateAcademicProgress = createCalculateAcademicProgress(repository);
+    const getMinPrerequisites = createGetMinPrerequisites(repository);
+    return { listCareers, listCoursesByCareer, calculateAcademicProgress, getMinPrerequisites } satisfies UseCareerApi;
   }, [repository]);
 
   return api;

@@ -36,6 +36,12 @@ interface UseDashboardReturn {
     selectionError?: string;
     statusColors: Record<CourseStatus, string>;
     statusLabels: Record<CourseStatus | 'all', string>;
+    hydrateSavedPlan: (params: {
+        plannedCourseIds?: string[];
+        courseStatuses?: Record<string, CourseStatus>;
+        creditLimit?: number | null;
+        selectedCareer?: string | null;
+    }) => void;
 
     handleCareerChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     handleClearFilters: () => void;
@@ -366,6 +372,36 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
         setSelectedCareer(v);
     }, []);
 
+    const hydrateSavedPlan = useCallback((params: {
+        plannedCourseIds?: string[];
+        courseStatuses?: Record<string, CourseStatus>;
+        creditLimit?: number | null;
+        selectedCareer?: string | null;
+    }) => {
+        const { plannedCourseIds: nextPlannedIds, courseStatuses, creditLimit: nextCreditLimit, selectedCareer: nextCareer } = params;
+
+        if (Array.isArray(nextPlannedIds)) {
+            setPlannedCourseIds(nextPlannedIds);
+        }
+
+        if (courseStatuses) {
+            setCourses((prevCourses) =>
+                prevCourses.map((course) => {
+                    const nextStatus = courseStatuses[course.id];
+                    return nextStatus ? { ...course, status: nextStatus } : course;
+                })
+            );
+        }
+
+        if (typeof nextCreditLimit === 'number' || nextCreditLimit === null) {
+            setCreditLimit(nextCreditLimit ?? null);
+        }
+
+        if (typeof nextCareer === 'string') {
+            setSelectedCareer(nextCareer);
+        }
+    }, []);
+
     return {
         selectedCycle,
         selectedCareer,
@@ -393,6 +429,7 @@ export const useDashboard = (): UseDashboardReturn & { setCoursesList: (courses:
         careers,
         setCreditLimit,
         setSelectedCareerValue,
+        hydrateSavedPlan,
         statusColors: dashboardFilters.statusColors,
         statusLabels: dashboardFilters.statusLabels,
     };

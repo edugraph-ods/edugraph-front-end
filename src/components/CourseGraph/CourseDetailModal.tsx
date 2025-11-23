@@ -2,6 +2,10 @@ import React from "react";
 import type { Course } from "@/domain/entities/course";
 import type { Node } from "reactflow";
 import { useTranslation } from "react-i18next";
+import { createCourseRepository } from "@/infrastructure/repositories/CourseRepositoryImpl";
+import { createGetCourseById } from "@/application/useCases/course/createGetCourseById";
+import { useStudent } from "@/presentation/hooks/useStudent";
+import { useUniversity } from "@/presentation/hooks/useUniversity";
 
 interface DetailModalProps {
   detailCourseId: string | null;
@@ -19,6 +23,119 @@ export const CourseDetailModal: React.FC<DetailModalProps> = ({
   courses,
 }) => {
   const { t } = useTranslation("dashboard");
+  const { getProfile } = useStudent();
+  const { listCareersByUniversity, listUniversities } = useUniversity();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [apiCourse, setApiCourse] = React.useState<
+    | {
+        id: string;
+        name: string;
+        code: string;
+        cycle: number;
+        credits: number;
+        prerequisites: string[];
+      }
+    | null
+  >(null);
+  const [careerName, setCareerName] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    const repo = createCourseRepository();
+    const getById = createGetCourseById(repo);
+    const run = async (id: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await getById(id);
+        if (!active) return;
+        setApiCourse(data);
+      } catch (e: unknown) {
+        if (!active) return;
+        const message = e instanceof Error ? e.message : "Error";
+        setError(message);
+        setApiCourse(null);
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+    if (detailCourseId) {
+      run(detailCourseId);
+    } else {
+      setApiCourse(null);
+      setError(null);
+      setIsLoading(false);
+    }
+    return () => {
+      active = false;
+    };
+  }, [detailCourseId]);
+
+  React.useEffect(() => {
+    let active = true;
+    const loadCareerName = async () => {
+      try {
+        setCareerName(null);
+        const courseItem = detailCourseId
+          ? scheduleCourses.find((c) => c.id === detailCourseId) || courses.find((c) => c.id === detailCourseId)
+          : null;
+        const careerId = courseItem?.career;
+        if (!careerId) return;
+        const profile = await getProfile();
+        const rawUniversity = (profile?.university && profile.university.trim().length > 0)
+          ? profile.university
+          : (courseItem?.university || "");
+
+        const isUuid = (val: string) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val.trim());
+
+        const resolveFromUniversity = async (uId: string) => {
+          const list = await listCareersByUniversity(uId);
+          if (!active) return false;
+          const match = list.find((c) => c.id === careerId);
+          if (match) {
+            setCareerName(match.name);
+            return true;
+          }
+          return false;
+        };
+
+        if (rawUniversity && isUuid(rawUniversity)) {
+          const found = await resolveFromUniversity(rawUniversity);
+          if (found) return; 
+        } else if (rawUniversity) {
+          const universities = await listUniversities();
+          const matchU = universities.find((u) => {
+            const name = (u.name || "").toLowerCase();
+            const acr = (u.acronym || "").toLowerCase();
+            const target = rawUniversity.toLowerCase();
+            return name === target || acr === target;
+          });
+          if (matchU) {
+            const found = await resolveFromUniversity(matchU.id);
+            if (found) return;
+          }
+        }
+
+        const universities = await listUniversities();
+        for (const u of universities) {
+          const found = await resolveFromUniversity(u.id);
+          if (found) break;
+        }
+      } catch {
+        if (active) setCareerName(null);
+      }
+    };
+    if (detailCourseId) {
+      loadCareerName();
+    } else {
+      setCareerName(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [detailCourseId, scheduleCourses, courses, getProfile, listCareersByUniversity, listUniversities]);
 
   if (!detailCourseId) return null;
   const course = scheduleCourses.find((c) => c.id === detailCourseId);
@@ -35,19 +152,49 @@ export const CourseDetailModal: React.FC<DetailModalProps> = ({
   const prerequisiteIds = Array.isArray(nodeData.prerequisites)
     ? nodeData.prerequisites
     : [];
-
-  const prereqLabels = prerequisiteIds.map((id: string) => {
+  const effectivePrereqs = Array.isArray(apiCourse?.prerequisites)
+    ? apiCourse!.prerequisites
+    : prerequisiteIds;
+  console.log('CourseDetailModal debug', {
+    courseId: detailCourseId,
+    apiCourse,
+    apiPrereqs: apiCourse?.prerequisites,
+    nodePrereqIds: prerequisiteIds,
+    effectivePrereqs,
+  });
+  const normalize = (s: unknown) =>
+    typeof s === "string" ? s.trim().toUpperCase() : String(s ?? "").trim().toUpperCase();
+  const seen = new Set<string>();
+  const uniquePrereqRaw: string[] = [];
+  for (const item of effectivePrereqs) {
+    const key = normalize(item);
+    if (!key) continue;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniquePrereqRaw.push(typeof item === "string" ? item : String(item));
+    }
+  }
+  const prereqLabels = uniquePrereqRaw.map((raw: string) => {
+    const key = normalize(raw);
     const match =
-      scheduleCourses.find((c) => c.id === id) ||
-      courses.find((c) => c.id === id);
-    return match?.name || id;
+      scheduleCourses.find((c) => normalize(c.id) === key) ||
+      courses.find((c) => normalize(c.id) === key) ||
+      scheduleCourses.find((c) => normalize((c as { code?: string }).code) === key) ||
+      courses.find((c) => normalize((c as { code?: string }).code) === key);
+    return match?.name || raw;
   });
 
   const dependentLabels = nodes
     .filter((n) => {
       const data = (n.data || {}) as NodeDataShape;
       const deps = Array.isArray(data.prerequisites) ? data.prerequisites : [];
-      return deps.includes(detailCourseId);
+      const currentCourseId = normalize(detailCourseId);
+      const currentCourseCode = normalize(course?.code || apiCourse?.code || course.id);
+      
+      return deps.some(dep => {
+        const normalizedDep = normalize(dep);
+        return normalizedDep === currentCourseId || normalizedDep === currentCourseCode;
+      });
     })
     .map((n) => {
       const match =
@@ -59,9 +206,22 @@ export const CourseDetailModal: React.FC<DetailModalProps> = ({
   const status = nodeData.status ?? "not_taken";
   const isInCriticalPath = Boolean(nodeData.isInCriticalPath);
 
+  const isUuidLike = (value: string | undefined | null) => {
+    if (!value) return false;
+    const v = value.trim();
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+  };
+  const displayCareer = careerName || (!isUuidLike(course.career) && course.career) || "No especificada";
+
   return (
     <div className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-card border border-border rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6 space-y-4">
+        {isLoading && (
+          <div className="text-sm text-muted-foreground">Cargando...</div>
+        )}
+        {error && (
+          <div className="text-sm text-red-600">{error}</div>
+        )}
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-semibold text-foreground">
@@ -79,37 +239,25 @@ export const CourseDetailModal: React.FC<DetailModalProps> = ({
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="col-span-2">
             <p className="text-muted-foreground">{t("course.course")}</p>
-            <p className="font-medium text-foreground">{course.name}</p>
+            <p className="font-medium text-foreground">{apiCourse?.name || course.name}</p>
           </div>
           <div className="col-span-2">
             <p className="text-muted-foreground">{t("course.code")}</p>
-            <p className="font-medium text-foreground">{course.id}</p>
-          </div>
-          <div className="col-span-2">
-            <p className="text-muted-foreground">{t("course.university")}</p>
-            <p className="font-medium text-foreground">
-              {course.university || "No especificada"}
-            </p>
-          </div>
-          <div className="col-span-2">
-            <p className="text-muted-foreground">{t("course.program")}</p>
-            <p className="font-medium text-foreground">
-              {course.program || "No especificado"}
-            </p>
+            <p className="font-medium text-foreground">{apiCourse?.code || course.code || course.id}</p>
           </div>
           <div className="col-span-2">
             <p className="text-muted-foreground">{t("course.career")}</p>
             <p className="font-medium text-foreground">
-              {course.career || "No especificada"}
+              {displayCareer}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground">{t("course.cycle")}</p>
-            <p className="font-medium text-foreground">{course.cycle}</p>
+            <p className="font-medium text-foreground">{apiCourse?.cycle ?? course.cycle}</p>
           </div>
           <div>
             <p className="text-muted-foreground">{t("course.credits")}</p>
-            <p className="font-medium text-foreground">{course.credits}</p>
+            <p className="font-medium text-foreground">{apiCourse?.credits ?? course.credits}</p>
           </div>
           <div>
             <p className="text-muted-foreground">{t("course.status")}</p>

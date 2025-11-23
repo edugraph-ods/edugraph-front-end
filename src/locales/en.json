@@ -55,11 +55,34 @@
     "loading": "Loading...",
     "redirecting": "Redirecting...",
     "ready": "Ready",
+    "progress": {
+      "title": "Academic Progress",
+      "description": "Calculate the cycles, months, and years needed based on your plan and credit limit.",
+      "button": "Calculate Progress",
+      "button-calculate": "Calculating...",
+      "cycle": "Cycles",
+      "month": "Months",
+      "year": "Years"
+    },
+    "savePlan": {
+      "title": "Save Plan",
+      "description": "Give your plan a name to identify it and download it as a file.",
+      "text": "Plan Name",
+      "namePlaceholder": "Plan-1",
+      "save": "Plan saved successfully.",
+      "lodas": "Plan loaded successfully.",
+      "errorload": "The plan could not be loaded. Please check the file.",
+      "error": "Plan could not be saved.",
+      "button": "Save",
+      "cancel": "Cancel",
+      "load-1": "Plan",
+      "load-2": "Loaded"
+    },
     "filters": {
       "title": "Filters",
       "career": "Career",
       "university": "University",
-      "universityPlaceholder":"List of universities",
+      "universityPlaceholder": "List of universities",
       "credits": "Credits",
       "careerPlaceholder": "Available Careers",
       "loading": "Academic Load",
@@ -85,6 +108,16 @@
         "title": "Advanced settings",
         "description": "Available algorithms"
       }
+    },
+    "advanced": {
+      "dynamic": "Dynamic programming with bitmasking",
+      "dynamic-description": "Try all possible combinations of courses per cycle, but save the results so as not to repeat calculations, thus finding the fastest way to finish the race.",
+      "floyd": "Floyd-Warshall",
+      "floyd-description": "Find the fastest route from basic courses to the desired course, counting each course as a step along the way.",
+      "course-floyd":"Course",
+      "minium-floyd":"Minimums required",
+      "sequence-floyd":"Sequence",
+      "warning-floyd":"Select a course in the network to check minimum prerequisites"
     },
     "detail": {
       "title": "Generated Plan",
@@ -134,7 +167,7 @@
     "subtitlepassword": "Enter the code you received and create a new, secure password.",
     "email": "Need more help? Email us at",
     "emaillabel": "Email address",
-    "support":"soporte@edugraph.com",
+    "support": "soporte@edugraph.com",
     "emailPlaceholder": "email@example.com",
     "code": "Recovery Code",
     "codePlaceholder": "Recovery Code",

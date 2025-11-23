@@ -61,11 +61,34 @@
     "loading": "Cargando...",
     "redirecting": "Redirigiendo...",
     "ready": "Listo",
+    "progress": {
+      "title": "Progreso académico",
+      "description": "Calcula ciclos, meses y años necesarios según tu plan y límite de créditos.",
+      "button": "Calcular progreso",
+      "button-calculate": "Calculando...",
+      "cycle": "Ciclos",
+      "mounth": "Meses",
+      "year": "Años"
+    },
+    "savePlan": {
+      "title": "Guardar plan",
+      "description": "Asigna un nombre para identificar tu plan y descárgalo como archivo.",
+      "text": "Nombre del plan",
+      "namePlaceholder": "Plan-1",
+      "save": "Plan guardado correctamente.",
+      "lodas": "Plan cargado correctamente.",
+      "errorload": "No se pudo cargar el plan. Verifica el archivo.",
+      "error": "No se pudo guardar el plan.",
+      "button": "Guardar",
+      "cancel": "Cancelar",
+      "load-1": "Plan",
+      "load-2": "cargado"
+    },
     "filters": {
       "title": "Filtros",
       "career": "Carrera",
       "university": "Universidad",
-      "universityPlaceholder":"Lista de universidades",
+      "universityPlaceholder": "Lista de universidades",
       "careerPlaceholder": "Carreras disponibles",
       "loading": "Carga academica",
       "total": "Total de creditos",
@@ -86,11 +109,21 @@
           "reprobated": "Reprobado",
           "critical": "Ruta Crítica"
         }
-      },
-      "advanced": {
-        "title": "Configuracion avanzada",
-        "description": "Algoritmos disponibles"
       }
+    },
+    "advanced": {
+      "dynamic": "Programación dinámica con bitmasking",
+      "dynamic-description": "Prueba todas las combinaciones posibles de cursos por ciclo, pero guarda los resultados para no repetir cálculos, encontrando así la forma más rápida de terminar la carrera.",
+      "floyd": "Floyd-Warshall",
+      "floyd-description": "Encuentra la ruta más rápida desde cursos básicos hasta el curso deseado, contando cada curso como un paso en el camino.",
+      "course-floyd": "Curso",
+      "minium-floyd": "Mínimos requeridos",
+      "sequence-floyd": "Secuencia",
+      "warning-floyd": "Selecciona un curso en el grafo para consultar mínimos prerrequisitos"
+    },
+    "algorithm": {
+      "title": "Algoritmos",
+      "description": "Algoritmos disponibles"
     },
     "detail": {
       "title": "Plan generado",
@@ -137,23 +170,23 @@
     "title": "Recuperación de cuenta",
     "description": "¿Problemas para ingresar?",
     "subtitle": "Ingresa el correo asociado a tu cuenta y te enviaremos un código de recuperación.",
-    "subtitlepassword":"Ingresa el código que recibiste y crea una nueva contraseña segura.",
+    "subtitlepassword": "Ingresa el código que recibiste y crea una nueva contraseña segura.",
     "email": "¿Necesitas ayuda adicional? Escríbenos a",
-    "emaillabel":"Correo electrónico",
-    "support":"soporte@edugraph.com",
+    "emaillabel": "Correo electrónico",
+    "support": "soporte@edugraph.com",
     "emailPlaceholder": "correo@example.com",
-    "code":"Código de recuperación",
+    "code": "Código de recuperación",
     "codePlaceholder": "Código de recuperación",
-    "password":"Nueva contraseña",
+    "password": "Nueva contraseña",
     "passwordPlaceholder": "Nueva contraseña",
-    "confirmPassword":"Confirmar contraseña",
+    "confirmPassword": "Confirmar contraseña",
     "confirmPasswordPlaceholder": "Confirma tu contraseña",
     "submit": "Enviar codigo",
-    "button":"Actualizar contraseña",
+    "button": "Actualizar contraseña",
     "backbutton": "Volver a solicitud de codigo",
     "backToHome": "Volver al inicio de sesion",
-    "span":"Te enviamos un código temporal a tu correo. Revísalo e ingrésalo a continuación.",
-    "alert":"Las contraseñas no coinciden. Vuelve a intentarlo.",
-    "confirm":"Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión."
+    "span": "Te enviamos un código temporal a tu correo. Revísalo e ingrésalo a continuación.",
+    "alert": "Las contraseñas no coinciden. Vuelve a intentarlo.",
+    "confirm": "Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión."
   }
 }

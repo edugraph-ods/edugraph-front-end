@@ -147,7 +147,7 @@ export const AuthContainer = () => {
               </motion.p>
               <motion.button
                 onClick={() => toggleAuthMode(!showRegister)}
-                className="border-2 border-white text-white px-8 py-2 rounded-md hover:bg-white hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                className="px-8 py-2 rounded-md text-white bg-transparent shadow-[inset_0_0_0_2px_rgba(255,255,255,0.9)] hover:bg-white hover:text-blue-600 transition-colors duration-200 cursor-pointer appearance-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-2 focus:ring-white focus:ring-offset-0"
                 variants={itemVariants}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

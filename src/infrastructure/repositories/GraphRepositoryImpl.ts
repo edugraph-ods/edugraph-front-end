@@ -8,6 +8,7 @@ import {
 } from "@/domain/entities/graph";
 import type { GraphRepository } from "@/domain/repositories/GraphRepository";
 import { getJson, postJson } from "@/infrastructure/http/apiClient";
+import { withPrefix } from "@/infrastructure/http/apiPaths";
 
 type ApiCourse = {
   code: string;
@@ -89,23 +90,23 @@ const toApiPlanPayload = (input: PlanInput) => ({
 
 export const createGraphRepository = (): GraphRepository => {
   const ingest: GraphRepository["ingest"] = async (input) => {
-    const response = await postJson<ApiCourse[]>("/api/v1/graph/ingest", toApiIngestPayload(input));
+    const response = await postJson<ApiCourse[]>(withPrefix("/graph/ingest"), toApiIngestPayload(input));
     return Array.isArray(response) ? response.map(mapCourse) : [];
   };
 
   const getCourses: GraphRepository["getCourses"] = async () => {
-    const response = await getJson<ApiCourse[]>("/api/v1/graph/courses");
+    const response = await getJson<ApiCourse[]>(withPrefix("/graph/courses"));
     return Array.isArray(response) ? response.map(mapCourse) : [];
   };
 
   const detectCycles: GraphRepository["detectCycles"] = async () => {
-    const response = await getJson<ApiDetectCycles>("/api/v1/graph/detect-cycles");
+    const response = await getJson<ApiDetectCycles>(withPrefix("/graph/detect-cycles"));
     return mapDetectCycles(response);
   };
 
   const plan: GraphRepository["plan"] = async (input: PlanInput) => {
     const apiPayload = toApiPlanPayload(input);
-    const response = await postJson<ApiPlanResponse>("/api/v1/graph/plan", apiPayload);
+    const response = await postJson<ApiPlanResponse>(withPrefix("/graph/plan"), apiPayload);
     return mapPlanResult(response);
   };
 

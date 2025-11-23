@@ -55,6 +55,10 @@ npm install react-toastify @types/react-toastify
 
 # 8) Dagre
 npm install dagre @types/dagre
+
+# 9) JSPDF 
+npm install jspdf jspdf-autotable --save
+
 ```
 
 ---
