@@ -1,4 +1,6 @@
 const rawPrefix = (process.env.NEXT_PUBLIC_API_PREFIX || "/api/v1").trim();
+console.log("DEBUG - NEXT_PUBLIC_API_PREFIX:", process.env.NEXT_PUBLIC_API_PREFIX);
+console.log("DEBUG - rawPrefix:", rawPrefix);
 const sanitizedPrefix = rawPrefix.endsWith("/") ? rawPrefix.slice(0, -1) : rawPrefix;
 
 const joinPaths = (base: string, path: string) => {
@@ -22,8 +24,14 @@ const replaceTokens = (template: string, tokens: Record<string, string>) => {
 export const withPrefix = (path: string) => joinPaths(sanitizedPrefix, path);
 
 // Authentication
-export const PATH_SIGN_UP = pathFromEnv(process.env.NEXT_PUBLIC_PATH_SIGN_UP, withPrefix("/sign-up"));
-export const PATH_SIGN_IN = pathFromEnv(process.env.NEXT_PUBLIC_PATH_SIGN_IN, withPrefix("/sign-in"));
+export const PATH_SIGN_UP = () => pathFromEnv(process.env.NEXT_PUBLIC_PATH_SIGN_UP, withPrefix("/sign-up"));
+export const PATH_SIGN_IN = () => {
+  const result = pathFromEnv(process.env.NEXT_PUBLIC_PATH_SIGN_IN, withPrefix("/sign-in"));
+  console.log("DEBUG - PATH_SIGN_IN() result:", result);
+  console.log("DEBUG - withPrefix('/sign-in'):", withPrefix("/sign-in"));
+  console.log("DEBUG - sanitizedPrefix:", sanitizedPrefix);
+  return result;
+};
 
 // Users 
 export const PATH_USERS_RECOVERY_CODE = pathFromEnv(
