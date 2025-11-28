@@ -2,12 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { FiChevronDown, FiChevronUp, FiSave } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiSave, FiTrash } from "react-icons/fi";
 import { createBuildDashboardReport } from "@/application/useCases/dashboard/createBuildDashboardReport";
 import { createExportDashboardReport } from "@/application/useCases/dashboard/createExportDashboardReport";
 import type { Course, CourseStatus } from "@/domain/entities/course";
 import { useDashboard } from "@/hooks/useDashboard";
 import type { PlanResult } from "@/domain/entities/graph";
+import type { StudyPlanSummary } from "@/domain/entities/coursePlan";
 import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useUniversity } from "@/presentation/hooks/useUniversity";
@@ -22,6 +23,7 @@ import type {
   ProgressCourseInput,
 } from "@/domain/entities/progress";
 import { createJspdfDashboardReportExporter } from "@/infrastructure/exporters/createJspdfDashboardReportExporter";
+import { useStudyPlan } from "@/presentation/hooks/useStudyPlan";
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph"), {
   ssr: false,
@@ -40,19 +42,24 @@ export default function Dashboard() {
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
   const [careerOptions, setCareerOptions] = useState<{ id: string; name: string }[]>([]);
   const [isSavePlanModalOpen, setIsSavePlanModalOpen] = useState(false);
+  const [isLoadPlanModalOpen, setIsLoadPlanModalOpen] = useState(false);
   const [savePlanName, setSavePlanName] = useState("");
   const [savePlanError, setSavePlanError] = useState("");
   const [loadPlanFeedback, setLoadPlanFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const importingPlanRef = useRef(false);
   const pendingCareerRef = useRef<string | null>(null);
-  const [minPrereqLoading, setMinPrereqLoading] = useState(false);
-  const [minPrereqError, setMinPrereqError] = useState<string>("");
+  const [availablePlans, setAvailablePlans] = useState<StudyPlanSummary[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [loadPlansLoading, setLoadPlansLoading] = useState(false);
+  const [loadPlansError, setLoadPlansError] = useState<string>("");
   const [minPrereqResult, setMinPrereqResult] = useState<{
     course_id: string;
     min_courses_required: number;
     courses_in_order: Array<{ id: string; name: string; code: string }>;
   } | null>(null);
+
+  const { create: createStudyPlan, listMine: listMyStudyPlans, getDetail: getStudyPlanDetail, remove: removeStudyPlan } = useStudyPlan();
 
   const buildDashboardReport = useMemo(() => createBuildDashboardReport(), []);
   const dashboardReportExporter = useMemo(() => createJspdfDashboardReportExporter(), []);
@@ -185,7 +192,6 @@ export default function Dashboard() {
     setProgressLoading(true);
     setProgressError("");
     setProgressResult(null);
-    setMinPrereqError("");
     setMinPrereqResult(null);
     try {
       if (selectedAlgorithm === "min_prereqs") {
@@ -208,28 +214,6 @@ export default function Dashboard() {
       setProgressLoading(false);
     }
   }, [selectedCareer, selectedCourseId, selectedAlgorithm, buildProgressPayloadPure, calculateAcademicProgress, getMinPrerequisites, t]);
-
-  const handleGetMinPrereqs = useCallback(async () => {
-    if (!selectedCareer) {
-      setMinPrereqError("Selecciona una carrera");
-      return;
-    }
-    if (!selectedCourseId) {
-      setMinPrereqError("Selecciona un curso en el grafo para consultar");
-      return;
-    }
-    setMinPrereqLoading(true);
-    setMinPrereqError("");
-    setMinPrereqResult(null);
-    try {
-      const res = await getMinPrerequisites(selectedCareer, selectedCourseId);
-      setMinPrereqResult(res);
-    } catch (e) {
-      setMinPrereqError(e instanceof Error ? e.message : "Error inesperado");
-    } finally {
-      setMinPrereqLoading(false);
-    }
-  }, [getMinPrerequisites, selectedCareer, selectedCourseId]);
 
   useEffect(() => {
     let active = true;
@@ -327,7 +311,7 @@ export default function Dashboard() {
     setSavePlanError("");
   }, []);
 
-  const handleConfirmPlanSave = useCallback(() => {
+  const handleConfirmPlanSave = useCallback(async () => {
     const trimmedName = savePlanName.trim();
     if (!trimmedName) {
       setSavePlanError(t("plan.saveDialog.validation", { defaultValue: "Ingresa un nombre para el plan." }));
@@ -335,46 +319,112 @@ export default function Dashboard() {
     }
 
     try {
-      const courseStatuses = courses.reduce<Record<string, CourseStatus>>((acc, c) => {
-        acc[c.id] = c.status;
-        return acc;
-      }, {});
+      if (!selectedCareer) {
+        setSavePlanError(t("filters.careerPlaceholder", { defaultValue: "Selecciona una carrera" }));
+        return;
+      }
 
-      const payload = {
-        version: 1,
-        generatedAt: new Date().toISOString(),
-        planName: trimmedName,
-        selectedCareer: selectedCareer || null,
-        selectedUniversity: selectedUniversity || null,
-        creditLimit,
-        totalPlannedCredits,
-        plannedCourseIds,
-        courseStatuses,
+      const planned = plannedCourseIds.length
+        ? courses.filter(c => plannedCourseIds.includes(c.id))
+        : [];
+      if (planned.length === 0) {
+        setSavePlanError(t("savePlan.validation.noCourses", { defaultValue: "Selecciona al menos un curso para guardar el plan." }));
+        return;
+      }
+
+      const grouped: Record<number, { cycle_number: number; courses: Array<{ course_id: string; status: "NOT_STARTED" | "PASSED" | "FAILED"; prerequisites: string[] }> }> = {};
+      for (const c of planned) {
+        const cycleNum = Number.isFinite(c.cycle) ? c.cycle : 0;
+        if (!grouped[cycleNum]) grouped[cycleNum] = { cycle_number: cycleNum, courses: [] };
+        const backendStatus = c.status === 'approved' ? 'PASSED' : c.status === 'failed' ? 'FAILED' : 'NOT_STARTED';
+        grouped[cycleNum].courses.push({
+          course_id: c.id,
+          status: backendStatus,
+          prerequisites: Array.isArray(c.prerequisites) ? c.prerequisites : [],
+        });
+      }
+
+      const cyclesPayload = Object
+        .values(grouped)
+        .filter(group => group.courses.length > 0)
+        .sort((a, b) => a.cycle_number - b.cycle_number);
+
+      const requestBody = {
+        name: trimmedName,
+        max_credits: typeof creditLimit === 'number' && creditLimit > 0 ? creditLimit : 8,
+        career_id: selectedCareer,
+        cycles: cyclesPayload,
       };
 
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const filename = `${trimmedName.replace(/[^a-z0-9-_]+/gi, "_") || "plan"}-edugraph-plan.json`;
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await createStudyPlan(requestBody);
 
       setIsSavePlanModalOpen(false);
       setLoadPlanFeedback({ type: "success", message: t("savePlan.save") });
     } catch (err) {
-      console.error("plan save error", err);
-      setSavePlanError(t("savePlan.error"));
+      console.error("study plan create error", err);
+      setSavePlanError(err instanceof Error ? err.message : t("savePlan.error"));
     }
-  }, [savePlanName, courses, selectedCareer, selectedUniversity, creditLimit, totalPlannedCredits, plannedCourseIds, t]);
+  }, [savePlanName, courses, plannedCourseIds, creditLimit, selectedCareer, createStudyPlan, t]);
 
-  const handleLoadSavedDataClick = useCallback(() => {
+  const handleLoadSavedDataClick = useCallback(async () => {
     setLoadPlanFeedback(null);
-    fileInputRef.current?.click();
+    setLoadPlansError("");
+    setAvailablePlans([]);
+    setSelectedPlanId("");
+    setIsLoadPlanModalOpen(true);
+    setLoadPlansLoading(true);
+    try {
+      const res = await listMyStudyPlans();
+      const plans = Array.isArray(res?.study_plans) ? res.study_plans : [];
+      setAvailablePlans(plans);
+      if (plans[0]?.plan_id) setSelectedPlanId(plans[0].plan_id);
+    } catch (e) {
+      setLoadPlansError(e instanceof Error ? e.message : t("savePlan.errorload", { defaultValue: "No se pudo obtener los planes." }));
+    } finally {
+      setLoadPlansLoading(false);
+    }
+  }, [listMyStudyPlans, t]);
+
+  const handleCloseLoadPlanModal = useCallback(() => {
+    setIsLoadPlanModalOpen(false);
+    setLoadPlansError("");
   }, []);
+
+  const handleConfirmLoadPlan = useCallback(async () => {
+    const chosen = availablePlans.find(p => p.plan_id === selectedPlanId);
+    setIsLoadPlanModalOpen(false);
+    if (!chosen) {
+      setLoadPlanFeedback({ type: "error", message: t("loadPlan.empty", { defaultValue: "No tienes planes guardados" }) });
+      return;
+    }
+    try {
+      const detail = await getStudyPlanDetail(chosen.plan_id);
+      const courseStatuses = detail.cycles
+        .flatMap(c => c.courses)
+        .reduce<Record<string, CourseStatus>>((acc, c) => {
+          const s = c.status === 'PASSED' ? 'approved' : c.status === 'FAILED' ? 'failed' : 'not_taken';
+          acc[c.course_id] = s;
+          return acc;
+        }, {});
+      const plannedCourseIds = detail.cycles.flatMap(c => c.courses.map(cc => cc.course_id));
+      const creditLimit = typeof detail.max_credits === 'number' ? detail.max_credits : null;
+
+      if (detail.career_id) {
+        setSelectedCareerValue(detail.career_id);
+      }
+
+      hydrateSavedPlan({
+        plannedCourseIds,
+        courseStatuses,
+        creditLimit,
+      });
+
+      setPlanResult(null);
+      setLoadPlanFeedback({ type: "success", message: `${t("loadPlan.selected", { defaultValue: "Plan seleccionado" })}: ${detail.name}` });
+    } catch (e) {
+      setLoadPlanFeedback({ type: "error", message: e instanceof Error ? e.message : t("savePlan.errorload", { defaultValue: "No se pudo cargar el plan." }) });
+    }
+  }, [availablePlans, selectedPlanId, getStudyPlanDetail, hydrateSavedPlan, setSelectedCareerValue, t]);
 
   const handlePlanFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -877,6 +927,68 @@ export default function Dashboard() {
               <button type="button" onClick={handleConfirmPlanSave} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm not-even:hover:bg-primary/90 transition-all duration-200 ease-out hover:scale-[1.03] cursor-pointer">
                 <FiSave className="h-4 w-4" />
                 {t("savePlan.button")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isLoadPlanModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-foreground">{t("loadPlan.title")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t("loadPlan.description")}</p>
+            <div className="mt-4 space-y-3 max-h-72 overflow-auto">
+              {loadPlansLoading ? (
+                <p className="text-sm text-muted-foreground">{t("loadPlan.loading")}</p>
+              ) : loadPlansError ? (
+                <p className="text-sm text-destructive">{loadPlansError}</p>
+              ) : availablePlans.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("loadPlan.empty")}</p>
+              ) : (
+                availablePlans.map((p) => (
+                  <div key={p.plan_id} className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 ${selectedPlanId === p.plan_id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
+                    <label className="flex items-center gap-3 cursor-pointer flex-1">
+                      <input
+                        type="radio"
+                        name="selected-plan"
+                        checked={selectedPlanId === p.plan_id}
+                        onChange={() => setSelectedPlanId(p.plan_id)}
+                        className="h-4 w-4 accent-primary"
+                      />
+                      <span className="text-sm text-foreground">{p.name}</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await removeStudyPlan(p.plan_id);
+                          const res = await listMyStudyPlans();
+                          const plans = Array.isArray(res?.study_plans) ? res.study_plans : [];
+                          setAvailablePlans(plans);
+                          if (plans.length === 0) setSelectedPlanId("");
+                          setLoadPlanFeedback({ type: "success", message: t("loadPlan.deleted") });
+                        } catch (err) {
+                          setLoadPlanFeedback({ type: "error", message: err instanceof Error ? err.message : t("loadPlan.errorload") });
+                        }
+                      }}
+                      className="p-2 rounded-md text-destructive hover:bg-destructive/10 hover:scale-[1.03] transition"
+                      title={t("loadPlan.delete")}
+                    >
+                      <FiTrash className="h-4 w-4 cursor-pointer" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={handleCloseLoadPlanModal} className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-all duration-200 ease-out hover:scale-[1.03] cursor-pointer">
+                {t("savePlan.cancel")}
+              </button>
+              <button type="button" onClick={handleConfirmLoadPlan} disabled={!selectedPlanId}
+                      className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ease-out hover:scale-[1.03] cursor-pointer ${selectedPlanId ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
+                {t("savePlan.load")}
               </button>
             </div>
           </div>

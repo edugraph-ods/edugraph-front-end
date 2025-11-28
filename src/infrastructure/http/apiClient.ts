@@ -1,4 +1,6 @@
 import { readAuthToken } from "@/shared/utils/authToken";
+import type { CreateStudyPlanRequest, CreateStudyPlanResponse } from "@/domain/entities/coursePlan";
+import { PATH_STUDY_PLANS } from "@/infrastructure/http/apiPaths";
 
 const DEFAULT_API_BASE_URL = "";
 const HTTP_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_HTTP_TIMEOUT_MS || 45000);
@@ -136,6 +138,41 @@ export const getJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
   return {} as T;
 };
 
+export const deleteJson = async <T>(path: string, init?: JsonInit): Promise<T> => {
+  const token = readAuthToken();
+  const url = buildUrl(path);
+  console.debug("DELETE", url);
+  const response = await fetchWithTimeout(url, {
+    method: init?.method ?? "DELETE",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (!response.ok) {
+    const message = await buildErrorMessage(response, init?.method ?? "DELETE", url);
+    throw new Error(message);
+  }
+  if (response.status === 204) return {} as T;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T;
+  }
+  return {} as T;
+};
+
+export const createStudyPlan = async (
+  studentId: string,
+  studyPlan: CreateStudyPlanRequest
+): Promise<CreateStudyPlanResponse> => {
+  return postJsonWithQuery<CreateStudyPlanResponse>(
+    PATH_STUDY_PLANS,
+    studyPlan,
+    { student_id: studentId }
+  );
+};
+
 export const getJsonPublic = async <T>(path: string, init?: JsonInit): Promise<T> => {
   const url = buildUrl(path);
   console.debug("GET (public)", url, "headers:", init?.headers);
@@ -224,6 +261,40 @@ export const postJson = async <T>(
 ): Promise<T> => {
   const token = readAuthToken();
   const url = buildUrl(path);
+  console.debug("POST", url, body);
+  const response = await fetchWithTimeout(url, {
+    method: init?.method ?? "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!response.ok) {
+    const message = await buildErrorMessage(response, init?.method ?? "POST", url);
+    throw new Error(message);
+  }
+  if (response.status === 204) return {} as T;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T;
+  }
+  return {} as T;
+};
+
+export const postJsonWithQuery = async <T>(
+  path: string,
+  body: unknown,
+  queryParams: Record<string, string>,
+  init?: JsonInit
+): Promise<T> => {
+  const token = readAuthToken();
+  const base = buildUrl(path);
+  const qs = new URLSearchParams(queryParams).toString();
+  const url = qs ? `${base}?${qs}` : base;
+
   console.debug("POST", url, body);
   const response = await fetchWithTimeout(url, {
     method: init?.method ?? "POST",

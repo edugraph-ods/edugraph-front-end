@@ -89,6 +89,35 @@ export const buildCareerProgressPath = (careerId: string) =>
     career_id: encodeURIComponent(careerId),
   });
 
+// Study Plans
+export const PATH_STUDY_PLANS = pathFromEnv(process.env.NEXT_PUBLIC_PATH_STUDY_PLANS, withPrefix("/study-plans"));
+const STUDENT_STUDY_PLANS_TEMPLATE = pathFromEnv(
+  process.env.NEXT_PUBLIC_PATH_STUDENT_STUDY_PLANS,
+  withPrefix("/students/{student_id}/study_plans")
+);
+export const buildStudentStudyPlansPath = (studentId: string) =>
+  replaceTokens(STUDENT_STUDY_PLANS_TEMPLATE, {
+    student_id: encodeURIComponent(studentId),
+  });
+
+const STUDY_PLAN_DETAIL_TEMPLATE = pathFromEnv(
+  process.env.NEXT_PUBLIC_PATH_STUDY_PLAN_DETAIL,
+  withPrefix("/study-plans/study_plans/{plan_id}")
+);
+export const buildStudyPlanDetailPath = (planId: string) =>
+  replaceTokens(STUDY_PLAN_DETAIL_TEMPLATE, {
+    plan_id: encodeURIComponent(planId),
+  });
+
+const STUDY_PLAN_DELETE_TEMPLATE = pathFromEnv(
+  process.env.NEXT_PUBLIC_PATH_STUDY_PLAN_DELETE,
+  withPrefix("/study-plans/{plan_id}")
+);
+export const buildStudyPlanDeletePath = (planId: string) =>
+  replaceTokens(STUDY_PLAN_DELETE_TEMPLATE, {
+    plan_id: encodeURIComponent(planId),
+  });
+
 // Courses
 const COURSE_BY_ID_TEMPLATE = pathFromEnv(
   process.env.NEXT_PUBLIC_PATH_COURSES_BY_ID,

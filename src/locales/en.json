@@ -75,6 +75,7 @@
       "error": "Plan could not be saved.",
       "button": "Save",
       "cancel": "Cancel",
+      "load": "Load data",
       "load-1": "Plan",
       "load-2": "Loaded"
     },
@@ -158,6 +159,15 @@
       "save": "Save",
       "show": "Show",
       "hide": "Hide"
+    },
+    "loadPlan":{
+      "title":"Load plan",
+      "description":"Select a saved plan to load it.",
+      "loading":"Loading...",
+      "empty":"No plans found",
+      "deleted":"Plan deleted",
+      "delete":"Delete",
+      "errorload": "The plan could not be deleted."
     }
   },
   "recoveryPassword": {
