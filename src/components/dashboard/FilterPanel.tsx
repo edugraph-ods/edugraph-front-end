@@ -1,6 +1,5 @@
 import { FiChevronDown, FiChevronUp, FiX, FiFilter, FiBookOpen } from 'react-icons/fi';
-import type { Course } from '@/domain/entities/course';
-import type { CourseStatus } from '@/domain/entities/course';
+import type { Course, CourseStatus } from '@/features/education/courses/domain/entities/course';
 
 type StatusFilter = 'all' | CourseStatus;
 
