@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { FiHome, FiMail, FiUnlock, FiKey } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { useRecovery } from "@/presentation/hooks/useRecovery";
+import LanguageSwitcher from "../../../components/LanguageSwitcher";
+import { useRecovery } from "../../../features/authentication/users/presentation/hooks/useRecovery";
 
 type RecoveryStep = "request" | "reset";
 

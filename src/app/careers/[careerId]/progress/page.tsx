@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { useCareer } from "@/presentation/hooks/useCareer";
-import type { AcademicProgressRequest, AcademicProgressResponse } from "@/domain/entities/progress";
+import { useCareer } from "../../../../features/education/careers/presentation/hooks/useCareer";
+import type { AcademicProgressRequest, AcademicProgressResponse } from "../../../../features/education/academic_progress/domain/entities/progress";
 
 export default function CareerProgressPage() {
   const params = useParams();

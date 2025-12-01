@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { FiChevronDown } from 'react-icons/fi';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { ThemeToggle } from '../theme-provider';
-import { readAuthToken } from '@/shared/utils/authToken';
-import { useStudent } from '@/presentation/hooks/useStudent';
-import type { StudentProfile } from '@/domain/entities/student';
+import { readAuthToken } from '../../shared/utils/authToken';
+import { useStudent } from '../../features/authentication/students/presentation/hooks/useStudent';
+import type { StudentProfile } from '../../features/authentication/students/domain/entities/student';
 
 interface DashboardHeaderProps {
   onLogout: () => void;

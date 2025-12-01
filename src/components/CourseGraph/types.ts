@@ -1,5 +1,5 @@
-import type { Course } from "@/domain/entities/course";
-import type { PlanResult } from "@/domain/entities/graph";
+import type { Course } from "@/features/education/courses/domain/entities/course";
+import type { PlanResult } from "@/features/shared/domain/entities/graph";
 
 export type CourseStatus = "not_taken" | "approved" | "failed";
 
