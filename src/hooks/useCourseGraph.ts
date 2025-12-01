@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Node, Edge, useNodesState, useEdgesState, MarkerType } from 'reactflow';
-import type { Course, CourseStatus } from '@/domain/entities/course';
-import type { CourseGraphEdge, CourseGraphNode } from '@/domain/entities/coursePlan';
-import { createBuildCourseGraph } from '@/application/useCases/coursePlan/createBuildCourseGraph';
+import type { Course, CourseStatus } from '@/features/education/courses/domain/entities/course';
+import type { CourseGraphEdge, CourseGraphNode } from '@/features/education/courses/domain/entities/coursePlan';
+import { createBuildCourseGraph } from '@/features/career/application/useCases/createBuildCourseGraph';
 
 export interface CourseNodeData {
   label: string;

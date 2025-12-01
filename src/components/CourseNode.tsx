@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import type { CourseStatus } from '@/domain/entities/course';
+import type { CourseStatus } from '@/features/education/courses/domain/entities/course';
 import { FiCheck, FiX, FiClock } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 
