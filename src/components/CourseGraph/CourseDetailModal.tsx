@@ -1,11 +1,11 @@
 import React from "react";
-import type { Course } from "@/domain/entities/course";
+import type { Course } from "../../features/education/courses/domain/entities/course";
 import type { Node } from "reactflow";
 import { useTranslation } from "react-i18next";
-import { createCourseRepository } from "@/infrastructure/repositories/CourseRepositoryImpl";
-import { createGetCourseById } from "@/application/useCases/course/createGetCourseById";
-import { useStudent } from "@/presentation/hooks/useStudent";
-import { useUniversity } from "@/presentation/hooks/useUniversity";
+import { createCourseRepository } from "../../features/education/courses/infrastructure/repositories/CourseRepositoryImpl";
+import { createGetCourseById } from "../../features/education/courses/application/useCases/createGetCourseById";
+import { useStudent } from "../../features/authentication/students/presentation/hooks/useStudent";
+import { useUniversity } from "../../features/education/universities/presentation/hooks/useUniversity";
 
 interface DetailModalProps {
   detailCourseId: string | null;

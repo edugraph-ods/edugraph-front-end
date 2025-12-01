@@ -1,19 +1,19 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Course, CourseStatus } from '@/domain/entities/course';
-import { useAuth } from '@/presentation/hooks/useAuth';
-import { clearAuthToken } from '@/shared/utils/authToken';
-import { createDashboardPreferencesRepository } from '../infrastructure/repositories/DashboardPreferencesLocalRepository';
-import { createGetStoredDashboardState } from '../application/useCases/dashboard/createGetStoredDashboardState';
-import { createSaveDashboardState } from '../application/useCases/dashboard/createSaveDashboardState';
-import { createClearDashboardState } from '../application/useCases/dashboard/createClearDashboardState';
-import { createStaticCourseCatalogRepository } from '@/infrastructure/repositories/StaticCourseCatalogRepository';
-import { createListCourses } from '@/application/useCases/courseCatalog/createListCourses';
-import { createUpdateCourseStatus } from '@/application/useCases/dashboard/createUpdateCourseStatus';
-import { createToggleCourseStatus } from '../application/useCases/dashboard/createToggleCourseStatus';
-import { createTogglePlannedCourse } from '../application/useCases/dashboard/createTogglePlannedCourse';
-import { createDashboardFiltersFacade } from '../application/useCases/dashboard/createDashboardFiltersFacade';
-import type { DashboardState } from '../domain/entities/dashboard';
+import type { Course, CourseStatus } from '../features/education/courses/domain/entities/course';
+import { useAuth } from '../features/authentication/users/presentation/hooks/useAuth';
+import { clearAuthToken } from '../shared/utils/authToken';
+import { createDashboardPreferencesRepository } from '../features/shared/infrastructure/repositories/DashboardPreferencesLocalRepository';
+import { createGetStoredDashboardState } from '../features/shared/application/useCases/createGetStoredDashboardState';
+import { createSaveDashboardState } from '../features/shared/application/useCases/createSaveDashboardState';
+import { createClearDashboardState } from '../features/shared/application/useCases/createClearDashboardState';
+import { createStaticCourseCatalogRepository } from '../features/education/courses/infrastructure/repositories/StaticCourseCatalogRepository';
+import { createListCourses } from '../features/education/courses/application/useCases/createListCourses';
+import { createUpdateCourseStatus } from '../features/shared/application/useCases/createUpdateCourseStatus';
+import { createToggleCourseStatus } from '../features/shared/application/useCases/createToggleCourseStatus';
+import { createTogglePlannedCourse } from '../features/shared/application/useCases/createTogglePlannedCourse';
+import { createDashboardFiltersFacade } from '../features/shared/application/useCases/createDashboardFiltersFacade';
+import type { DashboardState } from '../features/shared/domain/entities/dashboard';
 
 export const CAREERS = [
     { id: 'cs', name: 'Ciencias de la Computación' },

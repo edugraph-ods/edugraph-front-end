@@ -3,27 +3,27 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { FiChevronDown, FiChevronUp, FiSave, FiTrash } from "react-icons/fi";
-import { createBuildDashboardReport } from "@/application/useCases/dashboard/createBuildDashboardReport";
-import { createExportDashboardReport } from "@/application/useCases/dashboard/createExportDashboardReport";
-import type { Course, CourseStatus } from "@/domain/entities/course";
-import { useDashboard } from "@/hooks/useDashboard";
-import type { PlanResult } from "@/domain/entities/graph";
-import type { StudyPlanSummary } from "@/domain/entities/coursePlan";
+import { createBuildDashboardReport } from "../../features/shared/application/useCases/createBuildDashboardReport";
+import { createExportDashboardReport } from "../../features/shared/application/useCases/createExportDashboardReport";
+import type { Course, CourseStatus } from "../../features/education/courses/domain/entities/course";
+import { useDashboard } from "../../hooks/useDashboard";
+import type { PlanResult } from "../../features/shared/domain/entities/graph";
+import type { StudyPlanSummary } from "../../features/education/courses/domain/entities/coursePlan";
 import { useTranslation } from 'react-i18next';
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { useUniversity } from "@/presentation/hooks/useUniversity";
-import type { University } from "@/domain/entities/university";
-import type { Career as ApiCareer } from "@/domain/entities/career";
-import { useCareer } from "@/presentation/hooks/useCareer";
-import type { DashboardReportLabels } from "@/domain/entities/dashboardReport";
+import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
+import { useUniversity } from "../../features/education/universities/presentation/hooks/useUniversity";
+import type { University } from "../../features/shared/domain/entities/university";
+import type { Career as ApiCareer } from "../../features/education/careers/domain/entities/career";
+import { useCareer } from "../../features/education/careers/presentation/hooks/useCareer";
+import type { DashboardReportLabels } from "../../features/shared/domain/entities/dashboardReport";
 import type {
   AcademicProgressRequest,
   AcademicProgressResponse,
   BackendCourseStatus,
   ProgressCourseInput,
-} from "@/domain/entities/progress";
-import { createJspdfDashboardReportExporter } from "@/infrastructure/exporters/createJspdfDashboardReportExporter";
-import { useStudyPlan } from "@/presentation/hooks/useStudyPlan";
+} from "../../features/education/academic_progress/domain/entities/progress";
+import { createJspdfDashboardReportExporter } from "../../features/shared/infrastructure/exporters/createJspdfDashboardReportExporter";
+import { useStudyPlan } from "../../features/education/courses/presentation/hooks/useStudyPlan";
 
 const CourseGraph = dynamic(() => import("@/components/CourseGraph/CourseGraph"), {
   ssr: false,

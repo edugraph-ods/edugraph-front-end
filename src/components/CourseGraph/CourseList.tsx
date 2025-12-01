@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import type { Node } from "reactflow";
 import { useTranslation } from "react-i18next";
-import type { Course } from "@/domain/entities/course";
-import type { PlanResult } from "@/domain/entities/graph";
+import type { Course } from "@/features/education/courses/domain/entities/course";
+import type { PlanResult } from "@/features/shared/domain/entities/graph";
 import type { CourseNodeData } from "../../hooks/useCourseGraph";
 import type { CourseStatus } from "./types";
 
