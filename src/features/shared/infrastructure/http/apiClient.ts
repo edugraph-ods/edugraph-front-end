@@ -14,7 +14,9 @@ const resolveApiBase = () => {
   const trimmedBase = envBase.trim();
   if (!useAbsolute) return "";
   if (trimmedBase.length === 0) return "";
-  return trimmedBase.endsWith("/") ? trimmedBase.slice(0, -1) : trimmedBase;
+  const withoutApiSuffix = trimmedBase.replace(/\/api(\/v\d+)?\/?$/i, "");
+  const normalized = withoutApiSuffix.endsWith("/") ? withoutApiSuffix.slice(0, -1) : withoutApiSuffix;
+  return normalized;
 };
 
 const buildErrorMessage = async (
