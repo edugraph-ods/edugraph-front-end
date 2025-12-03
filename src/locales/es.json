@@ -120,7 +120,18 @@
       "course-floyd": "Curso",
       "minium-floyd": "Mínimos requeridos",
       "sequence-floyd": "Secuencia",
-      "warning-floyd": "Selecciona un curso en el grafo para consultar mínimos prerrequisitos"
+      "warning-floyd": "Selecciona un curso en el grafo para consultar mínimos prerrequisitos",
+      "bellman":"Bellman-Ford",
+      "bellman-description":"Calcula la distancia mínima desde los cursos aprobados a los cursos futuros.",
+      "bellman-result-title":"Rutas personalizadas",
+      "bellman-distance":"Distancia",
+      "bellman-empty":"No hay cursos aprobados o no se encontraron distancias."
+
+    },
+    "report":{
+      "columns":{
+        "cycle":"Ciclo"
+      }
     },
     "algorithm": {
       "title": "Algoritmos",

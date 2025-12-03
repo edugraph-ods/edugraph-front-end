@@ -17,4 +17,8 @@ export interface CareerRepository {
     min_courses_required: number;
     courses_in_order: Array<{ id: string; name: string; code: string }>;
   }>;
+  getPersonalizedProgress(
+    careerId: string,
+    payload: AcademicProgressRequest
+  ): Promise<Array<{ course_id: string; name: string; cycle: number; distance: number }>>;
 }
