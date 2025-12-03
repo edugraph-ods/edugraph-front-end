@@ -33,11 +33,14 @@ export default function Dashboard() {
   const { t } = useTranslation('dashboard');
   const [planResult, setPlanResult] = useState<PlanResult | null>(null);
   const [planError, setPlanError] = useState<string>("");
+
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("");
+
   const { listUniversities, listCareersByUniversity } = useUniversity();
-  const { listCoursesByCareer, calculateAcademicProgress, getMinPrerequisites } = useCareer();
+  const { listCoursesByCareer, calculateAcademicProgress, getMinPrerequisites, getPersonalizedProgress } = useCareer();
+
   const [universities, setUniversities] = useState<University[]>([]);
   const [selectedUniversity, setSelectedUniversity] = useState<string>("");
   const [careerOptions, setCareerOptions] = useState<{ id: string; name: string }[]>([]);
@@ -53,11 +56,14 @@ export default function Dashboard() {
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [loadPlansLoading, setLoadPlansLoading] = useState(false);
   const [loadPlansError, setLoadPlansError] = useState<string>("");
+
   const [minPrereqResult, setMinPrereqResult] = useState<{
     course_id: string;
     min_courses_required: number;
     courses_in_order: Array<{ id: string; name: string; code: string }>;
   } | null>(null);
+
+  const [personalizedResult, setPersonalizedResult] = useState<Array<{ course_id: string; name: string; cycle: number; distance: number }> | null>(null);
 
   const { create: createStudyPlan, listMine: listMyStudyPlans, getDetail: getStudyPlanDetail, remove: removeStudyPlan } = useStudyPlan();
 
@@ -115,6 +121,11 @@ export default function Dashboard() {
         value: "min_prereqs",
         title: t("advanced.floyd"),
         description: t("advanced.floyd-description"),
+      },
+      {
+        value: "bellman_ford",
+        title: t("advanced.bellman"),
+        description: t("advanced.bellman-description"),
       },
     ],
     [t]
@@ -193,6 +204,7 @@ export default function Dashboard() {
     setProgressError("");
     setProgressResult(null);
     setMinPrereqResult(null);
+    setPersonalizedResult(null);
     try {
       if (selectedAlgorithm === "min_prereqs") {
         if (!selectedCourseId) {
@@ -202,6 +214,11 @@ export default function Dashboard() {
         const res = await getMinPrerequisites(selectedCareer, selectedCourseId);
         setMinPrereqResult(res);
         setProgressWarnings([]);
+      } else if (selectedAlgorithm === "bellman_ford") {
+        const { payload, warnings } = buildProgressPayloadPure();
+        setProgressWarnings(warnings);
+        const res = await getPersonalizedProgress(selectedCareer, payload);
+        setPersonalizedResult(res);
       } else {
         const { payload, warnings } = buildProgressPayloadPure();
         setProgressWarnings(warnings);
@@ -213,7 +230,7 @@ export default function Dashboard() {
     } finally {
       setProgressLoading(false);
     }
-  }, [selectedCareer, selectedCourseId, selectedAlgorithm, buildProgressPayloadPure, calculateAcademicProgress, getMinPrerequisites, t]);
+  }, [selectedCareer, selectedCourseId, selectedAlgorithm, buildProgressPayloadPure, calculateAcademicProgress, getMinPrerequisites, getPersonalizedProgress, t]);
 
   useEffect(() => {
     let active = true;
@@ -379,7 +396,7 @@ export default function Dashboard() {
       setAvailablePlans(plans);
       if (plans[0]?.plan_id) setSelectedPlanId(plans[0].plan_id);
     } catch (e) {
-      setLoadPlansError(e instanceof Error ? e.message : t("savePlan.errorload", { defaultValue: "No se pudo obtener los planes." }));
+      setLoadPlansError(e instanceof Error ? e.message : t("savePlan.errorload"));
     } finally {
       setLoadPlansLoading(false);
     }
@@ -394,7 +411,7 @@ export default function Dashboard() {
     const chosen = availablePlans.find(p => p.plan_id === selectedPlanId);
     setIsLoadPlanModalOpen(false);
     if (!chosen) {
-      setLoadPlanFeedback({ type: "error", message: t("loadPlan.empty", { defaultValue: "No tienes planes guardados" }) });
+      setLoadPlanFeedback({ type: "error", message: t("loadPlan.empty") });
       return;
     }
     try {
@@ -770,7 +787,7 @@ export default function Dashboard() {
                         ))}
                       </ul>
                     )}
-                    {selectedAlgorithm !== 'min_prereqs' && progressResult && (
+                    {selectedAlgorithm === '' && progressResult && (
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                         <div className="rounded border p-2">
                           <div className="text-muted-foreground">{t("progress.cycle")}</div>
@@ -806,6 +823,50 @@ export default function Dashboard() {
                             ))}
                           </ol>
                         </div>
+                      </div>
+                    )}
+                    {selectedAlgorithm === 'bellman_ford' && personalizedResult && (
+                      <div className="mt-3 text-xs space-y-2">
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <div>{t("advanced.bellman-result-title")}</div>
+                          <div className="inline-flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                              {t("report.columns.cycle")}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                              {t("advanced.bellman-distance")}
+                            </span>
+                          </div>
+                        </div>
+                        {personalizedResult.length === 0 ? (
+                          <div className="text-muted-foreground mt-1">{t("advanced.bellman-empty")}</div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {[...personalizedResult]
+                              .sort((a, b) => (a.distance - b.distance) || (a.cycle - b.cycle))
+                              .map((item) => {
+                                const distanceIsZero = Number(item.distance) === 0;
+                                const distanceClass = distanceIsZero
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
+                                  : "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200";
+                                return (
+                                  <div key={item.course_id} className="rounded-lg border p-3 bg-card/50 hover:shadow-sm transition">
+                                    <div className="font-medium truncate" title={item.name || item.course_id}>
+                                      {item.name || item.course_id}
+                                    </div>
+                                    <div className="mt-2 flex items-center gap-2">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded bg-muted text-muted-foreground`}>
+                                        {t("report.columns.cycle")}: {item.cycle}
+                                      </span>
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded ${distanceClass}`}>
+                                        {t("advanced.bellman-distance")}: {String(item.distance)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
