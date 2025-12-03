@@ -1,8 +1,14 @@
 {
   "app": {
     "title": "EduGraph",
-    "description": "Educational Graph Platform",
+    "description": "Graph-based Educational Platform",
     "loading": "Loading..."
+  },
+  "common": {
+    "welcome": "Welcome to EduGraph",
+    "login": "Sign In",
+    "register": "Sign Up",
+    "logout": "Sign Out"
   },
   "Register": {
     "title": "Create an Account",
@@ -35,12 +41,12 @@
     "regiterdescription": "Optimize your academic path with smart routes",
     "regiterbutton": "Sign Up",
     "loginTitle": "Welcome back",
-    "loginDescription": "Enter your academic information to use all the features of the tool",
+    "loginDescription": "Enter your academic data to access all features of the tool",
     "loginButton": "Sign In"
   },
   "NotFound": {
     "title": "Page Not Found",
-    "description": "The page you're looking for doesn't exist or has been moved.",
+    "description": "The page you are looking for does not exist or has been moved.",
     "backToHome": "Back to Home"
   },
   "Loading": {
@@ -51,105 +57,115 @@
   },
   "dashboard": {
     "title": "EduGraph",
-    "description": "Educational Graph Platform",
+    "description": "Graph-based Educational Platform",
     "loading": "Loading...",
     "redirecting": "Redirecting...",
     "ready": "Ready",
     "progress": {
-      "title": "Academic Progress",
-      "description": "Calculate the cycles, months, and years needed based on your plan and credit limit.",
-      "button": "Calculate Progress",
+      "title": "Academic progress",
+      "description": "Calculates cycles, months and years needed according to your plan and credit limit.",
+      "button": "Calculate progress",
       "button-calculate": "Calculating...",
       "cycle": "Cycles",
-      "month": "Months",
+      "mounth": "Months",
       "year": "Years"
     },
     "savePlan": {
-      "title": "Save Plan",
-      "description": "Give your plan a name to identify it and download it as a file.",
-      "text": "Plan Name",
+      "title": "Save plan",
+      "description": "Assign a name to identify your plan and download it as a file.",
+      "text": "Plan name",
       "namePlaceholder": "Plan-1",
       "save": "Plan saved successfully.",
       "lodas": "Plan loaded successfully.",
-      "errorload": "The plan could not be loaded. Please check the file.",
-      "error": "Plan could not be saved.",
+      "errorload": "Could not load the plan. Check the file.",
+      "error": "Could not save the plan.",
       "button": "Save",
       "cancel": "Cancel",
-      "load": "Load data",
+      "load": "Load",
       "load-1": "Plan",
-      "load-2": "Loaded"
+      "load-2": "loaded"
     },
     "filters": {
       "title": "Filters",
-      "career": "Career",
+      "career": "Major",
       "university": "University",
       "universityPlaceholder": "List of universities",
-      "credits": "Credits",
-      "careerPlaceholder": "Available Careers",
-      "loading": "Academic Load",
-      "total": "Total Credits",
-      "warning": "Warning: You have exceeded the {creditLimit} credit limit.",
-      "limit": "Credit Limit",
+      "careerPlaceholder": "Available majors",
+      "loading": "Academic load",
+      "total": "Total credits",
+      "warning": "Warning: you have exceeded the limit of {creditLimit} credits.",
+      "limit": "Credit limit",
       "button": "Confirm",
       "cycles": "Cycles",
       "cycle": "Cycle",
-      "required": "Required",
+      "required": "Requirements",
       "detail": {
-        "title": "Flow Details",
+        "title": "Flow detail",
         "credits": "Credits",
         "cycle": "Cycle",
-        "button": "View Details",
+        "button": "View details",
         "selector": {
           "faild": "NR",
           "approved": "Approved",
-          "reprobated": "Failed"
+          "reprobated": "Failed",
+          "critical": "Critical Path"
         }
-      },
-      "advanced": {
-        "title": "Advanced settings",
-        "description": "Available algorithms"
       }
     },
     "advanced": {
       "dynamic": "Dynamic programming with bitmasking",
-      "dynamic-description": "Try all possible combinations of courses per cycle, but save the results so as not to repeat calculations, thus finding the fastest way to finish the race.",
+      "dynamic-description": "Try all possible combinations of courses per cycle, but store the results to avoid repeating calculations, thus finding the fastest way to finish the degree.",
       "floyd": "Floyd-Warshall",
-      "floyd-description": "Find the fastest route from basic courses to the desired course, counting each course as a step along the way.",
-      "course-floyd":"Course",
-      "minium-floyd":"Minimums required",
-      "sequence-floyd":"Sequence",
-      "warning-floyd":"Select a course in the network to check minimum prerequisites"
+      "floyd-description": "Finds the fastest route from basic courses to the desired course, counting each course as a step along the way.",
+      "course-floyd": "Course",
+      "minium-floyd": "Minimum requirements",
+      "sequence-floyd": "Sequence",
+      "warning-floyd": "Select a course in the graph to consult minimum prerequisites",
+      "bellman": "Bellman-Ford",
+      "bellman-description": "Calculates the minimum distance from approved courses to future courses.",
+      "bellman-result-title": "Custom routes",
+      "bellman-distance": "Distance",
+      "bellman-empty": "No approved courses or no distances found."
+    },
+    "report": {
+      "columns": {
+        "cycle": "Cycle"
+      }
+    },
+    "algorithm": {
+      "title": "Algorithms",
+      "description": "Available algorithms"
     },
     "detail": {
-      "title": "Generated Plan",
+      "title": "Generated plan",
       "credits": "Total cycles:",
       "cycle": "Cycle",
-      "credit": "Credits",
+      "credit": "credits",
       "nothing": "No courses"
     },
     "graph": {
       "title": "Legend",
-      "description": "Select a course to view the graph",
+      "description": "Select a course to visualize the graph",
       "approved": "Approved",
       "failed": "Failed",
       "not_taken": "Not taken",
-      "critical": "Critical Course"
+      "critical": "Critical course"
     },
     "course": {
-      "title": "Course Details",
-      "course": "Course Name",
+      "title": "Course details",
+      "course": "Course name",
       "code": "Code",
       "university": "University",
       "program": "Program",
-      "career": "Career",
+      "career": "Major",
       "cycle": "Cycle",
       "credits": "Credits",
       "status": "Status",
-      "isInCriticalPath": "Critical Path",
+      "isInCriticalPath": "Critical path",
       "prerequisites": "Prerequisites",
-      "not_required": "No prerequisites required",
-      "release": "Opening",
-      "nothing": "Does not unlock additional courses",
+      "not_required": "No prerequisites required.",
+      "release": "Offering",
+      "nothing": "Does not unlock additional courses.",
       "close": "Close"
     },
     "button": {
@@ -160,37 +176,37 @@
       "show": "Show",
       "hide": "Hide"
     },
-    "loadPlan":{
-      "title":"Load plan",
-      "description":"Select a saved plan to load it.",
-      "loading":"Loading...",
-      "empty":"No plans found",
-      "deleted":"Plan deleted",
-      "delete":"Delete",
-      "errorload": "The plan could not be deleted."
+    "loadPlan": {
+      "title": "Load plan",
+      "description": "Select a saved plan to load it",
+      "loading": "Loading...",
+      "empty": "No plans found",
+      "deleted": "Plan deleted",
+      "delete": "Delete",
+      "errorload": "Could not delete the plan"
     }
   },
   "recoveryPassword": {
-    "title": "Account Recovery",
-    "description": "Having trouble logging in?",
-    "subtitle": "Enter the email associated with your account and we'll send you a recovery code.",
-    "subtitlepassword": "Enter the code you received and create a new, secure password.",
-    "email": "Need more help? Email us at",
+    "title": "Account recovery",
+    "description": "Having trouble signing in?",
+    "subtitle": "Enter the email associated with your account and we will send you a recovery code.",
+    "subtitlepassword": "Enter the code you received and create a new secure password.",
+    "email": "Need additional help? Write to us at",
     "emaillabel": "Email address",
-    "support": "soporte@edugraph.com",
+    "support": "support@edugraph.com",
     "emailPlaceholder": "email@example.com",
-    "code": "Recovery Code",
-    "codePlaceholder": "Recovery Code",
-    "password": "New Password",
-    "passwordPlaceholder": "New Password",
-    "confirmPassword": "Confirm Password",
+    "code": "Recovery code",
+    "codePlaceholder": "Recovery code",
+    "password": "New password",
+    "passwordPlaceholder": "New password",
+    "confirmPassword": "Confirm password",
     "confirmPasswordPlaceholder": "Confirm your password",
-    "submit": "Submit Code",
-    "button": "Update Password",
-    "backbutton": "Back to Code Request",
-    "backToHome": "Back to Home of session",
-    "span": "We sent you a temporary code to your email. Review it and enter it below.",
+    "submit": "Send code",
+    "button": "Update password",
+    "backbutton": "Back to code request",
+    "backToHome": "Back to sign in",
+    "span": "We sent a temporary code to your email. Check it and enter it below.",
     "alert": "Passwords do not match. Please try again.",
-    "confirm": "Your password was successfully updated. You can now log in."
+    "confirm": "Your password has been updated successfully. You can now sign in."
   }
 }

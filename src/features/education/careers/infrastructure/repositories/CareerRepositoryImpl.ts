@@ -4,7 +4,7 @@ import type { Course } from "../../../courses/domain/entities/course";
 import type { AcademicProgressRequest, AcademicProgressResponse } from "../../../academic_progress/domain/entities/progress";
 import { CoursePlanner } from "../../../courses/domain/services/CoursePlanner";
 import { getJson, postJson } from "../../../../shared/infrastructure/http/apiClient";
-import { PATH_CAREERS, buildCareerCoursesPath, buildCareerProgressPath, buildCareerMinPrereqsPath } from "../../../../shared/infrastructure/http/apiPaths";
+import { PATH_CAREERS, buildCareerCoursesPath, buildCareerProgressPath, buildCareerMinPrereqsPath, buildCareerPersonalizedProgressPath } from "../../../../shared/infrastructure/http/apiPaths";
 
 interface ApiCareer {
   id?: unknown;
@@ -135,10 +135,38 @@ export const createCareerRepository = (): CareerRepository => {
     return { course_id, min_courses_required, courses_in_order };
   };
 
+  const getPersonalizedProgress: CareerRepository["getPersonalizedProgress"] = async (
+    careerId: string,
+    payload: AcademicProgressRequest
+  ) => {
+    if (!careerId) throw new Error("careerId is required");
+    const path = buildCareerPersonalizedProgressPath(careerId);
+    const approved: string[] = Array.isArray(payload?.cycles)
+      ? payload.cycles.flatMap((cy) =>
+          Array.isArray(cy.courses)
+            ? cy.courses.filter((c) => c.status === "PASSED").map((c) => c.id)
+            : []
+        )
+      : [];
+    const requestBody = { approved_courses: approved };
+    const response = await postJson<unknown>(path, requestBody);
+    const list = Array.isArray(response) ? (response as unknown[]) : [];
+    return list
+      .map((item) => (typeof item === "object" && item !== null ? (item as Record<string, unknown>) : null))
+      .filter((v): v is Record<string, unknown> => v !== null)
+      .map((v) => ({
+        course_id: typeof v.course_id === "string" ? v.course_id : "",
+        name: typeof v.name === "string" ? v.name : "",
+        cycle: Number(v.cycle ?? 0) || 0,
+        distance: Number(v.distance ?? 0) || 0,
+      }));
+  };
+
   return {
     listCareers,
     listCoursesByCareer,
     calculateAcademicProgress,
     getMinPrerequisites,
+    getPersonalizedProgress,
   };
 };

@@ -75,6 +75,10 @@ const CAREER_PROGRESS_TEMPLATE = pathFromEnv(
   process.env.NEXT_PUBLIC_PATH_CAREERS_PROGRESS,
   withPrefix("/careers/{career_id}/progress")
 );
+const CAREER_PERSONALIZED_PROGRESS_TEMPLATE = pathFromEnv(
+  process.env.NEXT_PUBLIC_PATH_CAREERS_PERSONALIZED_PROGRESS,
+  withPrefix("/careers/{career_id}/personalized-progress")
+);
 export const buildCareerCoursesPath = (careerId: string) =>
   replaceTokens(CAREER_COURSES_TEMPLATE, {
     career_id: encodeURIComponent(careerId),
@@ -86,6 +90,10 @@ export const buildCareerMinPrereqsPath = (careerId: string, courseId: string) =>
   });
 export const buildCareerProgressPath = (careerId: string) =>
   replaceTokens(CAREER_PROGRESS_TEMPLATE, {
+    career_id: encodeURIComponent(careerId),
+  });
+export const buildCareerPersonalizedProgressPath = (careerId: string) =>
+  replaceTokens(CAREER_PERSONALIZED_PROGRESS_TEMPLATE, {
     career_id: encodeURIComponent(careerId),
   });
 
