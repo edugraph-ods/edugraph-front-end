@@ -88,6 +88,7 @@
     "filters": {
       "title": "Filtros",
       "career": "Carrera",
+      "credits": "Creditos",
       "university": "Universidad",
       "universityPlaceholder": "Lista de universidades",
       "careerPlaceholder": "Carreras disponibles",
@@ -110,6 +111,10 @@
           "reprobated": "Reprobado",
           "critical": "Ruta Crítica"
         }
+      },
+      "advanced": {
+        "title": "Avanzado",
+        "description": "Opciones avanzadas"
       }
     },
     "advanced": {

@@ -87,10 +87,11 @@
     },
     "filters": {
       "title": "Filters",
-      "career": "Major",
+      "career": "Career",
+      "credits": "Credits",
       "university": "University",
       "universityPlaceholder": "List of universities",
-      "careerPlaceholder": "Available majors",
+      "careerPlaceholder": "Available careers",
       "loading": "Academic load",
       "total": "Total credits",
       "warning": "Warning: you have exceeded the limit of {creditLimit} credits.",
@@ -110,6 +111,10 @@
           "reprobated": "Failed",
           "critical": "Critical Path"
         }
+      },
+      "advanced": {
+        "title": "Advanced",
+        "description": "Advanced options"
       }
     },
     "advanced": {
@@ -157,14 +162,14 @@
       "code": "Code",
       "university": "University",
       "program": "Program",
-      "career": "Major",
+      "career": "Career",
       "cycle": "Cycle",
       "credits": "Credits",
       "status": "Status",
       "isInCriticalPath": "Critical path",
       "prerequisites": "Prerequisites",
       "not_required": "No prerequisites required.",
-      "release": "Offering",
+      "release": "Opening",
       "nothing": "Does not unlock additional courses.",
       "close": "Close"
     },
